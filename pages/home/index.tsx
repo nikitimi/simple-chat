@@ -5,9 +5,10 @@ import {
   getDocs,
   query,
   where,
+  getDoc,
 } from "firebase/firestore"
 import Link from "next/link"
-import { type MouseEvent, useState, useEffect } from "react"
+import { type MouseEvent, useState, type ChangeEvent } from "react"
 import { Main } from "~/components"
 import { useAuth } from "~/components/AuthContext"
 import Center from "~/components/Center"
@@ -35,13 +36,14 @@ export const Header = () => {
 
 export default function Home() {
   const { currentUser } = useAuth()
+  const [users, setUsers] = useState<{ email: string }[]>([])
   const [{ contactContainer, messagingContainer }, setModal] = useState({
     contactContainer: false,
     messagingContainer: false,
   })
+  const userCol = collection(db, "users")
 
   const fetchUser = async () => {
-    const userCol = collection(db, "users")
     if (currentUser) {
       let array: DocumentData = []
       const { email, displayName } = currentUser
@@ -54,6 +56,7 @@ export default function Home() {
     }
   }
   fetchUser()
+
   const handleModal =
     (props: "contactContainer" | "messagingContainer") =>
     (e: MouseEvent<HTMLButtonElement>) => {
@@ -89,7 +92,16 @@ export default function Home() {
                 <h3>Message</h3>
                 <input
                   placeholder="To"
-                  onChange={(e) => console.log(e.target.value)}
+                  onChange={async (e: ChangeEvent<HTMLInputElement>) => {
+                    const inp: HTMLInputElement = e.currentTarget
+                    const snap = await getDocs(
+                      query(
+                        userCol,
+                        where("email", "array-contains-any", inp.value)
+                      )
+                    )
+                    if (!snap.empty) snap.forEach((e) => console.log(e.data()))
+                  }}
                   type="text"
                 />
                 <input
