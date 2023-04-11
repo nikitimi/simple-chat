@@ -1,4 +1,5 @@
 import type { Auth, UserCredential } from "firebase/auth"
+import { HTMLAttributes } from "react"
 
 export type MainTypes = {
   title: string
@@ -22,4 +23,8 @@ export type AuthContextValue = {
   // upEmail: (props: EmailType) => Promise<void>
   // upPassword: (props: PasswordType) => void
   googleSignIn: () => void
+}
+
+export interface TextfieldTypes extends HTMLAttributes<HTMLInputElement> {
+  name: string
 }
