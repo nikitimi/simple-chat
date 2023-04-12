@@ -27,3 +27,20 @@ export function setThemeMount(): ThunkAction<
     }
   }
 }
+export function toggleModal(
+  props: uiAction.ToggleModalTypes
+): ThunkAction<void, RootState, undefined, DataAction> {
+  return async (dispatch) => {
+    try {
+      dispatch({
+        type: uiAction.TOGGLE_MODAL,
+        payload: props,
+      })
+    } catch (error) {
+      dispatch({
+        type: uiAction.HANDLER_ERROR,
+        payload: new Error(`Toggle Modal Error: ${error ? error : ""}`),
+      })
+    }
+  }
+}

@@ -3,11 +3,15 @@ import * as uiAction from "../types"
 
 interface DataState {
   darkMode: boolean
+  messageModal: boolean
+  submitContactMessage: boolean
   error: Error | null
 }
 
 const initialState: DataState = {
   darkMode: false,
+  messageModal: false,
+  submitContactMessage: false,
   error: null,
 }
 
@@ -20,6 +24,12 @@ export default function uiReducer(
       return {
         ...state,
         darkMode: action.payload,
+        error: null,
+      }
+    case uiAction.TOGGLE_MODAL:
+      return {
+        ...state,
+        [action.payload]: !state[action.payload],
         error: null,
       }
     case uiAction.HANDLER_ERROR:

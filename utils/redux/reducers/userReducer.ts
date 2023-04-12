@@ -3,11 +3,13 @@ import * as userAction from "../types"
 
 interface DataState {
   id: string | null
+  contactList: string[] | null
   error: Error | null
 }
 
 const initialState: DataState = {
   id: null,
+  contactList: null,
   error: null,
 }
 
@@ -16,6 +18,12 @@ export default function userReducer(
   action: DataAction
 ): DataState {
   switch (action.type) {
+    case userAction.SET_CONTACT_LIST:
+      return {
+        ...state,
+        contactList: action.payload,
+        error: null,
+      }
     case userAction.SET_CURRENT_ID:
       return {
         ...state,
