@@ -15,7 +15,7 @@ export type AuthTypes = {
   password: PasswordType["password"]
 }
 export type AuthContextValue = {
-  currentUser: Auth["currentUser"] | null
+  currentUser: Auth["currentUser"]
   signin: (props: AuthTypes) => Promise<UserCredential | void>
   signup: (props: AuthTypes) => Promise<UserCredential | void>
   signout: () => Promise<void>

@@ -5,7 +5,7 @@ import {
   createContext,
   type ReactNode,
 } from "react"
-import { auth } from "~/utils/firebase"
+import { auth, db } from "~/utils/firebase"
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -19,6 +19,9 @@ import {
 } from "firebase/auth"
 import type { AuthContextValue, AuthTypes } from "./types"
 import { Loading } from "./"
+import { getDocs, query, collection, where, addDoc } from "firebase/firestore"
+import { setCurrentId } from "~/utils/redux/actions/userActions"
+import { useAppDispatch } from "~/utils/redux/hooks"
 
 const AuthContext = createContext<AuthContextValue>({
   currentUser: null,
@@ -34,6 +37,7 @@ export const AuthProvider: React.FC<any> = ({
 }: {
   children: ReactNode
 }) => {
+  const dispatch = useAppDispatch()
   const [currentUser, setCurrentUser] = useState<Auth["currentUser"]>(null)
   const [loading, setLoading] = useState(true)
 
@@ -48,15 +52,28 @@ export const AuthProvider: React.FC<any> = ({
   }
   const googleSignIn = async () => {
     try {
-      return await signInWithPopup(auth, new GoogleAuthProvider()).then(
-        (result: UserCredential) => {
-          const credential = GoogleAuthProvider.credentialFromResult(result)
-          if (credential !== null) {
-            signInWithCredential(auth, credential)
-            console.log(currentUser)
-          }
+      const userCol = collection(db, "users")
+      const sign = signInWithPopup(auth, new GoogleAuthProvider())
+      const { user } = await sign
+      sign.then((result: UserCredential) => {
+        const credential = GoogleAuthProvider.credentialFromResult(result)
+        if (credential !== null) {
+          signInWithCredential(auth, credential)
         }
+      })
+      const snap = await getDocs(
+        query(userCol, where("email", "==", user.email))
       )
+      if (snap.empty) {
+        const { displayName, photoURL, email, emailVerified } = user
+        const newUser = await addDoc(userCol, {
+          displayName,
+          photoURL,
+          email,
+          emailVerified,
+        })
+        dispatch(setCurrentId(newUser.id))
+      }
     } catch (err) {
       console.log(err)
     }

@@ -5,9 +5,11 @@ import React from "react"
 import { Loading } from "~/components"
 import { useAuth } from "~/components/AuthContext"
 import Center from "~/components/Center"
+import { useAppSelector } from "~/utils/redux/hooks"
 
 const Dashboard = () => {
   const DIMENSION = 80
+  const { id } = useAppSelector((s) => s.user)
   const { currentUser, signout } = useAuth()
   const { push } = useRouter()
 
@@ -35,6 +37,16 @@ const Dashboard = () => {
           className="w-full max-w-fit mx-auto capitalize rounded-xl px-2 py-1 border bg-red-500 text-white shadow-md hover:scale-110 duration-300 ease"
         >
           signout
+        </button>
+        <button
+          className="w-full max-w-fit mx-auto capitalize rounded-xl px-2 py-1 border bg-yellow-400 text-white shadow-md hover:scale-110 duration-300 ease"
+          onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+            e.preventDefault()
+
+            navigator.clipboard.writeText(`${window.location.host}/${id}`)
+          }}
+        >
+          Share
         </button>
       </Center>
     )
