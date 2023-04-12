@@ -76,7 +76,10 @@ const UserID = () => {
                 button.setAttribute("disabled", "true")
                 const docRef = doc(db, `/users/${id}`)
                 const fetchDoc = await tsx.get(docRef)
-                let contactArr: string[] = fetchDoc.data()?.contacts
+                let contactArr: string[] =
+                  fetchDoc.data()?.contacts === undefined
+                    ? []
+                    : fetchDoc.data()?.contacts
                 if (!contactArr.includes(email))
                   tsx.update(docRef, {
                     contacts: arrayUnion(email),
