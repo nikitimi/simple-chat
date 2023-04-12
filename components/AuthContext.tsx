@@ -22,6 +22,7 @@ import { Loading } from "./"
 import { getDocs, query, collection, where, addDoc } from "firebase/firestore"
 import { setCurrentId } from "~/utils/redux/actions/userActions"
 import { useAppDispatch } from "~/utils/redux/hooks"
+import Center from "./Center"
 
 const AuthContext = createContext<AuthContextValue>({
   currentUser: null,
@@ -96,7 +97,13 @@ export const AuthProvider: React.FC<any> = ({
   }
   return (
     <AuthContext.Provider value={value}>
-      {loading ? <Loading /> : children}
+      {loading ? (
+        <Center>
+          <Loading />
+        </Center>
+      ) : (
+        children
+      )}
     </AuthContext.Provider>
   )
 }

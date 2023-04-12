@@ -3,14 +3,15 @@ import {
   type DocumentData,
   getDoc,
   DocumentSnapshot,
-  updateDoc,
   arrayUnion,
   runTransaction,
 } from "firebase/firestore"
-import Image from "next/image"
+// import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/router"
 import React, { MouseEvent, useEffect, useState } from "react"
+import { Loading } from "~/components"
+import { useAuth } from "~/components/AuthContext"
 import Center from "~/components/Center"
 import { db } from "~/utils/firebase"
 import { useAppSelector } from "~/utils/redux/hooks"
@@ -24,6 +25,8 @@ type StateTypes = {
 
 const UserID = () => {
   const DIMENSION = 32
+  const { push } = useRouter()
+  const { currentUser } = useAuth()
   const { id } = useAppSelector((s) => s.user)
   const { query } = useRouter()
   const [{ displayName, email, contacts, photoUrl }, setState] = useState<
@@ -34,7 +37,8 @@ const UserID = () => {
     photoUrl: "",
     contacts: [],
   })
-  const userId = typeof query.userId === "string" ? query.userId : ""
+  const userId =
+    typeof query.userId === "string" ? query.userId : `${query.userId}`
 
   useEffect(() => {
     const fetchUserInfo = async () => {
@@ -71,6 +75,7 @@ const UserID = () => {
         <>
           <button
             onClick={async (e: MouseEvent<HTMLButtonElement>) => {
+              if (!currentUser) return push("/signin")
               const button: HTMLButtonElement = e.currentTarget
               await runTransaction(db, async (tsx) => {
                 button.setAttribute("disabled", "true")
@@ -88,8 +93,8 @@ const UserID = () => {
                   console.log(
                     `You've aready added this user in your contact list`
                   )
-                return button.removeAttribute("disabled")
               })
+              button.removeAttribute("disabled")
             }}
           >
             Add to Contact

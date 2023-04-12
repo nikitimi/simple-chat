@@ -56,42 +56,26 @@ export const Header = () => {
 export default function Home() {
   const inpRef = useRef<HTMLInputElement>(null)
   const { currentUser } = useAuth()
-  const [users] = useState<{ email: string }[]>([])
+  const [users, setUsers] = useState<{ email: string }[]>([])
   const [{ messagingContainer }, setModal] = useState({
     messagingContainer: false,
   })
-  // const userCol = collection(db, "users")
-  // const emailQuery = (email: string | null) =>
-  //   query(userCol, where("email", "==", email))
 
-  // useEffect(() => {
-  //   onSnapshot(userCol, (snap) => {
-  //     snap.docs.map((doc) =>
-  //       setUsers((p) => [...p, { email: doc.data().email }])
-  //     )
-  //   })
-  // }, [userCol])
-
-  // const fetchUser = async () => {
-  //   if (userState.currentUser) {
-  //     let array: DocumentData = []
-  //     const { email, displayName } = userState.currentUser
-  //     const snap = await getDocs(emailQuery(email))
-  //     if (snap.empty && process.env.NODE_ENV === "production")
-  //       addDoc(userCol, {
-  //         email,
-  //         displayName,
-  //       })
-  //   }
-  // }
-  // fetchUser()
+  useEffect(() => {
+    if (currentUser)
+      onSnapshot(collection(db, "users"), (snap) => {
+        snap.docs.map((doc) =>
+          setUsers((p) => [...p, { email: doc.data().email }])
+        )
+      })
+  }, [currentUser])
 
   const handleModal =
     (props: "messagingContainer") => (e: MouseEvent<HTMLButtonElement>) => {
       e.preventDefault()
       setModal((p) => ({ ...p, [props]: !p[props] }))
     }
-
+  console.log(users)
   return (
     <Main title="home" description="This is a landing page">
       <Header />
@@ -129,16 +113,9 @@ export default function Home() {
                 >
                   <h3>Message</h3>
                   <Textfield ref={inpRef} name="to">
-                    {users
-                      .filter(({ email }) =>
-                        email.includes(
-                          inpRef.current ? inpRef.current.value : ""
-                        )
-                      )
-
-                      .map(({ email }, i) => (
-                        <option key={i}>{email}</option>
-                      ))}
+                    {users.map(({ email }, i) => (
+                      <option key={i}>{email}</option>
+                    ))}
                   </Textfield>
                   <textarea name="content" />
                   <button disabled={true}>Send</button>
