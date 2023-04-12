@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { useAuth } from "./AuthContext"
 
-export const Header = () => {
+export const Header = ({ blur }: { blur: boolean }) => {
   const { currentUser } = useAuth()
   const paths = currentUser
     ? [
@@ -13,7 +13,11 @@ export const Header = () => {
         { value: "signin", name: "signin" },
       ]
   return (
-    <header className="bg-yellow-500 p-4 capitalize">
+    <header
+      className={`${
+        blur ? "blur-sm" : ""
+      } bg-yellow-500 p-4 capitalize duration-300 ease`}
+    >
       <nav>
         <ul className="flex flex-row justify-around items-center">
           {paths.map(({ value, name }) => {

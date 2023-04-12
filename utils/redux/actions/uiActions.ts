@@ -28,13 +28,14 @@ export function setThemeMount(): ThunkAction<
   }
 }
 export function toggleModal(
-  props: uiAction.ToggleModalTypes
+  props: uiAction.ToggleModalTypes,
+  value?: boolean
 ): ThunkAction<void, RootState, undefined, DataAction> {
   return async (dispatch) => {
     try {
       dispatch({
         type: uiAction.TOGGLE_MODAL,
-        payload: props,
+        payload: { props, value },
       })
     } catch (error) {
       dispatch({

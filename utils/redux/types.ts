@@ -16,7 +16,7 @@ export type setCurrentId = {
 }
 export type toggleModal = {
   type: typeof TOGGLE_MODAL
-  payload: ToggleModalTypes
+  payload: { props: ToggleModalTypes; value?: boolean }
 }
 export type setDarkMode = {
   type: typeof SET_DARKMODE

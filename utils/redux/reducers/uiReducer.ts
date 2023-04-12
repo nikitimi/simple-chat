@@ -29,7 +29,10 @@ export default function uiReducer(
     case uiAction.TOGGLE_MODAL:
       return {
         ...state,
-        [action.payload]: !state[action.payload],
+        [action.payload.props]:
+          action.payload.value !== undefined
+            ? action.payload.value
+            : !state[action.payload.props],
         error: null,
       }
     case uiAction.HANDLER_ERROR:
