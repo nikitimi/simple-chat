@@ -5,6 +5,7 @@ interface DataState {
   darkMode: boolean
   messageModal: boolean
   submitContactMessage: boolean
+  chatModal: string | null
   error: Error | null
 }
 
@@ -12,6 +13,7 @@ const initialState: DataState = {
   darkMode: false,
   messageModal: false,
   submitContactMessage: false,
+  chatModal: null,
   error: null,
 }
 
@@ -20,6 +22,12 @@ export default function uiReducer(
   action: DataAction
 ): DataState {
   switch (action.type) {
+    case uiAction.SET_CHAT:
+      return {
+        ...state,
+        chatModal: action.payload,
+        error: null,
+      }
     case uiAction.SET_DARKMODE:
       return {
         ...state,

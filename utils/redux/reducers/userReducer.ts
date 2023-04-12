@@ -4,12 +4,14 @@ import * as userAction from "../types"
 interface DataState {
   id: string | null
   contactList: string[] | null
+  chatHeads: string[] | null
   error: Error | null
 }
 
 const initialState: DataState = {
   id: null,
   contactList: null,
+  chatHeads: null,
   error: null,
 }
 
@@ -28,6 +30,12 @@ export default function userReducer(
       return {
         ...state,
         id: action.payload,
+        error: null,
+      }
+    case userAction.SET_CHAT_HEADS:
+      return {
+        ...state,
+        chatHeads: action.payload,
         error: null,
       }
     case userAction.HANDLER_ERROR:

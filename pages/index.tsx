@@ -1,4 +1,18 @@
-import { collection, onSnapshot } from "firebase/firestore"
+import {
+  arrayUnion,
+  collection,
+  doc,
+  DocumentData,
+  getDoc,
+  getDocs,
+  limit,
+  onSnapshot,
+  query,
+  setDoc,
+  updateDoc,
+  where,
+} from "firebase/firestore"
+import Image from "next/image"
 import Link from "next/link"
 import { type MouseEvent, useState, useEffect, useRef } from "react"
 import { Main } from "~/components"
@@ -8,8 +22,14 @@ import Center from "~/components/Center"
 import { Header } from "~/components/Header"
 import { db } from "~/utils/firebase"
 import { toggleModal } from "~/utils/redux/actions/uiActions"
-import { setContactList } from "~/utils/redux/actions/userActions"
+import {
+  setChatHeads,
+  setChatModal,
+  setContactList,
+} from "~/utils/redux/actions/userActions"
 import { useAppDispatch, useAppSelector } from "~/utils/redux/hooks"
+
+export const chatColName = "chats"
 
 export default function Home() {
   const dispatch = useAppDispatch()
@@ -17,12 +37,16 @@ export default function Home() {
   const { currentUser } = useAuth()
 
   useEffect(() => {
-    if (currentUser)
+    let isMounted = true
+    if (currentUser && isMounted)
       onSnapshot(collection(db, "users"), (snap) => {
         let array: string[] = []
         snap.docs.map((doc) => array.push(doc.data().email))
         dispatch(setContactList(array))
       })
+    return () => {
+      isMounted = false
+    }
   }, [dispatch, currentUser])
 
   return (
@@ -30,7 +54,10 @@ export default function Home() {
       <Header blur={messageModal} />
       {currentUser && <MessagingModal />}
       {currentUser ? (
-        <SideBar blur={messageModal} />
+        <div className="flex">
+          <SideBar blur={messageModal} />
+          <ChatModal blur={messageModal} />
+        </div>
       ) : (
         <Center>
           <h2>
@@ -48,11 +75,43 @@ export default function Home() {
 const SideBar = ({ blur }: { blur: boolean }) => {
   const dispatch = useAppDispatch()
   const { messageModal } = useAppSelector((s) => s.ui)
+  const { chatHeads } = useAppSelector((s) => s.user)
+  const { currentUser } = useAuth()
+  const colRef = collection(db, chatColName)
+
+  useEffect(() => {
+    let isMounted = true
+    const fetchChats = async () => {
+      const checkChats = await getDocs(colRef)
+      if (currentUser && !checkChats.empty && isMounted) {
+        onSnapshot(
+          query(
+            colRef,
+            where("participants", "array-contains-any", [currentUser.email]),
+            limit(7)
+          ),
+          (snap) => {
+            let chatHeadsHolder: string[] = []
+            if (!snap.empty)
+              snap.forEach((document) => {
+                chatHeadsHolder.push(document.id)
+              })
+            dispatch(setChatHeads(chatHeadsHolder))
+          }
+        )
+      }
+    }
+    fetchChats()
+    return () => {
+      isMounted = false
+    }
+  }, [colRef, currentUser, dispatch])
+
   return (
     <section
       className={`${
         blur ? "blur-sm" : ""
-      } h-screen max-h-full bg-yellow-400 w-1/4 text-center duration-300 ease`}
+      } h-screen max-h-full bg-slate-50 border-r border-slate-200 w-1/4 text-center duration-300 ease`}
     >
       <label htmlFor="create-message">Create a Message</label>
       <button
@@ -63,7 +122,107 @@ const SideBar = ({ blur }: { blur: boolean }) => {
       >
         +
       </button>
+      <div className="grid justify-center gap-4">
+        {chatHeads?.map((v) => {
+          const DIMENSION = 64
+          return (
+            <div
+              className="bg-transparent shadow-md w-full max-w-fit px-4 py-2 overflow-hidden rounded-full"
+              key={v}
+            >
+              <button
+                className="text-3xl"
+                onClick={async () => {
+                  dispatch(setChatModal(v))
+                }}
+              >
+                {v.substring(v.length - 10, v.length - 11).toUpperCase()}
+                {/* <Image
+                  src="/vercel.svg"
+                  height={DIMENSION}
+                  width={DIMENSION}
+                  alt="user-icon"
+                /> */}
+              </button>
+            </div>
+          )
+        })}
+      </div>
     </section>
+  )
+}
+
+const ChatModal = ({ blur }: { blur: boolean }) => {
+  type ChatTypes = {
+    history: {
+      message: string
+      recipient: string
+      sender: string
+      sentTime: number
+    }[]
+    participants: string[]
+    updatedAt: number
+  }
+
+  const { currentUser } = useAuth()
+  const { chatModal } = useAppSelector((s) => s.ui)
+  const [chat, setChat] = useState<ChatTypes | DocumentData>()
+
+  useEffect(() => {
+    let isMounted = true
+    if (chatModal && isMounted) {
+      const getChatModal = () => {
+        onSnapshot(doc(db, `/chats/${chatModal}`), (snap) => {
+          setChat(snap.data())
+        })
+      }
+      getChatModal()
+    }
+    return () => {
+      isMounted = false
+    }
+  }, [chatModal])
+  return (
+    <div
+      className={`${
+        blur ? "blur-sm" : ""
+      } w-full h-screen max-h-full bg-slate-50`}
+    >
+      {chat && (
+        <div className="bg-yellow-400 text-center py-2 px-1">
+          {
+            chat?.participants.filter(
+              (value: string) => !(value === currentUser?.email)
+            )[0]
+          }
+        </div>
+      )}
+      <div className="flex gap-1 flex-col m-2">
+        {chat?.history.map(
+          (
+            { message, sentTime, sender }: ChatTypes["history"][number],
+            i: number
+          ) => {
+            const sentT = new Date()
+            sentT.setTime(sentTime)
+            const time = `${sentT.getHours()}:${sentT.getMinutes()}`
+            return (
+              <div
+                key={i}
+                className={`${
+                  sender === currentUser?.email
+                    ? "bg-blue-400 text-white ml-auto"
+                    : "bg-slate-200 text-black mr-auto"
+                } w-fit rounded-md px-4 py-2`}
+              >
+                <p>{message}</p>
+                <p>{time}</p>
+              </div>
+            )
+          }
+        )}
+      </div>
+    </div>
   )
 }
 
@@ -72,11 +231,13 @@ const MessagingModal = () => {
   const [recipient, setRecipient] = useState("")
   const { contactList } = useAppSelector((s) => s.user)
   const { messageModal, submitContactMessage } = useAppSelector((s) => s.ui)
+  const { id } = useAppSelector((s) => s.user)
   const dispatch = useAppDispatch()
+  const { currentUser } = useAuth()
 
   return messageModal ? (
     <div
-      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-orange-200
+      className="absolute z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-100
     w-1/2 shadow-md rounded-md p-4"
     >
       <Minimize
@@ -84,10 +245,32 @@ const MessagingModal = () => {
         name="-"
       />
       <form
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault()
+          const createdId = `${id}${recipient}`
+          const docRef = doc(collection(db, chatColName), createdId)
           const message = e.currentTarget.querySelector("textarea")
-          console.log(message?.value, recipient)
+          const fetchChat = await getDoc(docRef)
+
+          const data = {
+            recipient,
+            sender: currentUser?.email,
+            sentTime: new Date().getTime(),
+            message: message?.value,
+          }
+
+          if (fetchChat.exists()) {
+            updateDoc(docRef, {
+              updatedAt: new Date().getTime(),
+              history: arrayUnion({ ...data }),
+            })
+          } else
+            setDoc(docRef, {
+              participants: [recipient, currentUser?.email],
+              updatedAt: new Date().getTime(),
+              history: arrayUnion({ ...data }),
+            })
+          setRecipient("")
           dispatch(toggleModal("messageModal"))
         }}
       >

@@ -3,6 +3,23 @@ import { RootState } from "../store"
 import { DataAction } from "../types"
 import * as userAction from "../types"
 
+export function setChatModal(
+  id: string
+): ThunkAction<void, RootState, undefined, DataAction> {
+  return async (dispatch) => {
+    try {
+      dispatch({
+        type: userAction.SET_CHAT,
+        payload: id,
+      })
+    } catch (error) {
+      dispatch({
+        type: userAction.HANDLER_ERROR,
+        payload: new Error(`Set chat Error: ${error ? error : ""}`),
+      })
+    }
+  }
+}
 export function setContactList(
   contactList: string[]
 ): ThunkAction<void, RootState, undefined, DataAction> {
@@ -18,6 +35,23 @@ export function setContactList(
         payload: new Error(
           `User Setting Contact list Error: ${error ? error : ""}`
         ),
+      })
+    }
+  }
+}
+export function setChatHeads(
+  chatHeads: string[]
+): ThunkAction<void, RootState, undefined, DataAction> {
+  return async (dispatch) => {
+    try {
+      dispatch({
+        type: userAction.SET_CHAT_HEADS,
+        payload: chatHeads,
+      })
+    } catch (error) {
+      dispatch({
+        type: userAction.HANDLER_ERROR,
+        payload: new Error(`User Chat heads Error: ${error ? error : ""}`),
       })
     }
   }

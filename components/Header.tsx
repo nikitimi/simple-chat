@@ -5,18 +5,18 @@ export const Header = ({ blur }: { blur: boolean }) => {
   const { currentUser } = useAuth()
   const paths = currentUser
     ? [
-        { value: "#", name: "home" },
+        { value: "", name: "chats" },
         { value: "dashboard", name: "dashboard" },
       ]
     : [
-        { value: "#", name: "home" },
+        { value: "", name: "chats" },
         { value: "signin", name: "signin" },
       ]
   return (
     <header
       className={`${
         blur ? "blur-sm" : ""
-      } bg-yellow-500 p-4 capitalize duration-300 ease`}
+      } bg-slate-50 border-b border-slate-200 p-4 capitalize duration-300 ease`}
     >
       <nav>
         <ul className="flex flex-row justify-around items-center">

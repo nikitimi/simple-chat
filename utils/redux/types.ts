@@ -1,4 +1,6 @@
+export const SET_CHAT = "SET_CHAT"
 export const SET_CONTACT_LIST = "SET_CONTACT_LIST"
+export const SET_CHAT_HEADS = "SET_CHAT_HEADS"
 export const SET_CURRENT_ID = "SET_CURRENT_ID"
 export const TOGGLE_MODAL = "TOGGLE_MODAL"
 export const SET_DARKMODE = "SET_DARKMODE"
@@ -6,8 +8,16 @@ export const HANDLER_ERROR = "HANDLER_ERROR"
 
 export type ToggleModalTypes = "messageModal" | "submitContactMessage"
 
+export type setChat = {
+  type: typeof SET_CHAT
+  payload: string
+}
 export type setContactList = {
   type: typeof SET_CONTACT_LIST
+  payload: string[]
+}
+export type setChatHeads = {
+  type: typeof SET_CHAT_HEADS
   payload: string[]
 }
 export type setCurrentId = {
@@ -29,7 +39,9 @@ export type handleError = {
 
 // Define a union type for all possible actions
 export type DataAction =
+  | setChat
   | setContactList
+  | setChatHeads
   | setCurrentId
   | toggleModal
   | setDarkMode
