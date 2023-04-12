@@ -38,12 +38,13 @@ export default function Home() {
 
   useEffect(() => {
     let isMounted = true
-    if (currentUser && isMounted)
+    if (currentUser && isMounted) {
       onSnapshot(collection(db, "users"), (snap) => {
         let array: string[] = []
         snap.docs.map((doc) => array.push(doc.data().email))
         dispatch(setContactList(array))
       })
+    }
     return () => {
       isMounted = false
     }
@@ -111,7 +112,7 @@ const SideBar = ({ blur }: { blur: boolean }) => {
     <section
       className={`${
         blur ? "blur-sm" : ""
-      } h-screen max-h-full bg-slate-50 border-r border-slate-200 w-1/4 text-center duration-300 ease`}
+      } min-h-screen max-h-full bg-slate-50 border-r border-slate-200 w-1/4 text-center duration-300 ease`}
     >
       <label htmlFor="create-message">Create a Message</label>
       <button
@@ -166,7 +167,16 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
 
   const { currentUser } = useAuth()
   const { chatModal } = useAppSelector((s) => s.ui)
+  const { id } = useAppSelector((s) => s.user)
   const [chat, setChat] = useState<ChatTypes | DocumentData>()
+  const [message, setMessage] = useState("")
+  const recipient = chat?.participants.filter(
+    (value: string) => !(value === currentUser?.email)
+  )[0]
+    ? chat?.participants.filter(
+        (value: string) => !(value === currentUser?.email)
+      )[0]
+    : currentUser?.email
 
   useEffect(() => {
     let isMounted = true
@@ -186,16 +196,10 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
     <div
       className={`${
         blur ? "blur-sm" : ""
-      } w-full h-screen max-h-full bg-slate-50`}
+      } w-full min-h-screen max-h-full bg-slate-50`}
     >
       {chat && (
-        <div className="bg-yellow-400 text-center py-2 px-1">
-          {
-            chat?.participants.filter(
-              (value: string) => !(value === currentUser?.email)
-            )[0]
-          }
-        </div>
+        <div className="bg-yellow-400 text-center py-2 px-1">{recipient}</div>
       )}
       <div className="flex gap-1 flex-col m-2">
         {chat?.history.map(
@@ -222,6 +226,52 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
           }
         )}
       </div>
+      {chat && (
+        <div className="fixed bottom-0 w-4/5 right-0">
+          <form>
+            <textarea
+              required
+              name="content"
+              value={message}
+              onChange={(e) => {
+                const text: HTMLTextAreaElement = e.currentTarget
+                setMessage(text.value)
+              }}
+              onKeyDown={async (e) => {
+                if (e.code === "Enter" || e.code === "NumpadEnter") {
+                  e.preventDefault()
+                  if (chatModal) {
+                    const docRef = doc(collection(db, chatColName), chatModal)
+                    const fetchChat = await getDoc(docRef)
+
+                    const data = {
+                      recipient,
+                      sender: currentUser?.email,
+                      sentTime: new Date().getTime(),
+                      message,
+                    }
+
+                    if (fetchChat.exists()) {
+                      updateDoc(docRef, {
+                        updatedAt: new Date().getTime(),
+                        history: arrayUnion({ ...data }),
+                      })
+                    } else
+                      setDoc(docRef, {
+                        participants: [recipient, currentUser?.email],
+                        updatedAt: new Date().getTime(),
+                        history: arrayUnion({ ...data }),
+                      })
+                    setMessage("")
+                  }
+                }
+              }}
+              className="w-full resize-none p-4 rounded-md focus:opacity-100 outline-none border duration-300 ease focus:border-blue-500 hover:opacity-100 opacity-10"
+              placeholder="Enter a message..."
+            />
+          </form>
+        </div>
+      )}
     </div>
   )
 }
