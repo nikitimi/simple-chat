@@ -12,9 +12,8 @@ import {
   updateDoc,
   where,
 } from "firebase/firestore"
-import Image from "next/image"
 import Link from "next/link"
-import { type MouseEvent, useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Main } from "~/components"
 import { useAuth } from "~/components/AuthContext"
 import { Minimize } from "~/components/Buttons"
@@ -33,7 +32,7 @@ export const chatColName = "chats"
 
 export default function Home() {
   const dispatch = useAppDispatch()
-  const { messageModal } = useAppSelector((s) => s.ui)
+  const { messageModal, chatHeader } = useAppSelector((s) => s.ui)
   const { currentUser } = useAuth()
 
   useEffect(() => {
@@ -42,6 +41,7 @@ export default function Home() {
       onSnapshot(collection(db, "users"), (snap) => {
         let array: string[] = []
         snap.docs.map((doc) => array.push(doc.data().email))
+        console.log("contact_lists")
         dispatch(setContactList(array))
       })
     }
@@ -52,12 +52,13 @@ export default function Home() {
 
   return (
     <Main title="home" description="This is a landing page">
-      <Header blur={messageModal} />
+      <Header blur={messageModal || chatHeader} />
+      {currentUser && <ChatHeader />}
       {currentUser && <MessagingModal />}
       {currentUser ? (
         <div className="flex">
-          <SideBar blur={messageModal} />
-          <ChatModal blur={messageModal} />
+          <SideBar blur={messageModal || chatHeader} />
+          <ChatModal blur={messageModal || chatHeader} />
         </div>
       ) : (
         <Center>
@@ -75,16 +76,18 @@ export default function Home() {
 
 const SideBar = ({ blur }: { blur: boolean }) => {
   const dispatch = useAppDispatch()
-  const { messageModal } = useAppSelector((s) => s.ui)
+  const { messageModal, chatHeader } = useAppSelector((s) => s.ui)
   const { chatHeads } = useAppSelector((s) => s.user)
   const { currentUser } = useAuth()
   const colRef = collection(db, chatColName)
 
   useEffect(() => {
     let isMounted = true
+
     const fetchChats = async () => {
       const checkChats = await getDocs(colRef)
-      if (currentUser && !checkChats.empty && isMounted) {
+      if (currentUser && !checkChats.empty && !chatHeads) {
+        console.log("chatHeads")
         onSnapshot(
           query(
             colRef,
@@ -102,7 +105,9 @@ const SideBar = ({ blur }: { blur: boolean }) => {
         )
       }
     }
-    fetchChats()
+    if (isMounted) {
+      fetchChats()
+    }
     return () => {
       isMounted = false
     }
@@ -116,7 +121,7 @@ const SideBar = ({ blur }: { blur: boolean }) => {
     >
       <label htmlFor="create-message">Create a Message</label>
       <button
-        disabled={messageModal}
+        disabled={messageModal || chatHeader}
         id="create-message"
         className="bg-green-500 text-white px-2 py-1 rounded-md w-full"
         onClick={() => dispatch(toggleModal("messageModal"))}
@@ -125,15 +130,16 @@ const SideBar = ({ blur }: { blur: boolean }) => {
       </button>
       <div className="grid justify-center gap-4">
         {chatHeads?.map((v) => {
-          const DIMENSION = 64
           return (
             <div
               className="bg-transparent shadow-md w-full max-w-fit px-4 py-2 overflow-hidden rounded-full"
               key={v}
             >
               <button
+                disabled={messageModal || chatHeader}
                 className="text-3xl"
                 onClick={async () => {
+                  console.log("chatModals")
                   dispatch(setChatModal(v))
                 }}
               >
@@ -166,8 +172,8 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
   }
 
   const { currentUser } = useAuth()
-  const { chatModal } = useAppSelector((s) => s.ui)
-  const { id } = useAppSelector((s) => s.user)
+  const { messageModal, chatHeader, chatModal } = useAppSelector((s) => s.ui)
+  const dispatch = useAppDispatch()
   const [chat, setChat] = useState<ChatTypes | DocumentData>()
   const [message, setMessage] = useState("")
   const recipient = chat?.participants.filter(
@@ -196,10 +202,17 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
     <div
       className={`${
         blur ? "blur-sm" : ""
-      } w-full min-h-screen max-h-full bg-slate-50`}
+      } w-full min-h-screen max-h-full bg-slate-50 duration-300 ease`}
     >
       {chat && (
-        <div className="bg-yellow-400 text-center py-2 px-1">{recipient}</div>
+        <div className="bg-yellow-400 relative text-center py-2 px-1">
+          <button
+            disabled={messageModal || chatHeader}
+            onClick={() => dispatch(toggleModal("chatHeader"))}
+          >
+            <h1>{recipient}</h1>
+          </button>
+        </div>
       )}
       <div className="flex gap-1 flex-col m-2">
         {chat?.history.map(
@@ -252,6 +265,7 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
                     }
 
                     if (fetchChat.exists()) {
+                      dispatch(setChatHeads(null))
                       updateDoc(docRef, {
                         updatedAt: new Date().getTime(),
                         history: arrayUnion({ ...data }),
@@ -273,6 +287,23 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
         </div>
       )}
     </div>
+  )
+}
+
+const ChatHeader = () => {
+  const { chatHeader } = useAppSelector((s) => s.ui)
+  const dispatch = useAppDispatch()
+  return chatHeader ? (
+    <div
+      className="absolute z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-100
+    w-1/2 shadow-md rounded-md p-4"
+    >
+      <button onClick={() => dispatch(toggleModal("chatHeader"))}>x</button>
+      <h1>ChatHeader</h1>
+      <Minimize name="Delete Chat" onClick={() => console.log("delete")} />
+    </div>
+  ) : (
+    <></>
   )
 }
 
@@ -310,6 +341,7 @@ const MessagingModal = () => {
           }
 
           if (fetchChat.exists()) {
+            dispatch(setChatHeads(null))
             updateDoc(docRef, {
               updatedAt: new Date().getTime(),
               history: arrayUnion({ ...data }),

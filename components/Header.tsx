@@ -1,7 +1,9 @@
 import Link from "next/link"
+import { useAppSelector } from "~/utils/redux/hooks"
 import { useAuth } from "./AuthContext"
 
 export const Header = ({ blur }: { blur: boolean }) => {
+  const { messageModal, chatHeader } = useAppSelector((s) => s.ui)
   const { currentUser } = useAuth()
   const paths = currentUser
     ? [
@@ -23,7 +25,15 @@ export const Header = ({ blur }: { blur: boolean }) => {
           {paths.map(({ value, name }) => {
             return (
               <li key={name}>
-                <Link href={`/${value}`}>{name}</Link>
+                <Link
+                  href={`/${value}`}
+                  className={messageModal || chatHeader ? "cursor-default" : ""}
+                  onClick={(e) => {
+                    if (messageModal || chatHeader) e.preventDefault()
+                  }}
+                >
+                  {name}
+                </Link>
               </li>
             )
           })}

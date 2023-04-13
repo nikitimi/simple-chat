@@ -40,7 +40,7 @@ export function setContactList(
   }
 }
 export function setChatHeads(
-  chatHeads: string[]
+  chatHeads: string[] | null
 ): ThunkAction<void, RootState, undefined, DataAction> {
   return async (dispatch) => {
     try {
