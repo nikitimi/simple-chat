@@ -251,7 +251,12 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
                 setMessage(text.value)
               }}
               onKeyDown={async (e) => {
-                if (e.code === "Enter" || e.code === "NumpadEnter") {
+                if (
+                  e.code === "Enter" ||
+                  e.code === "NumpadEnter" ||
+                  e.code === "Return" ||
+                  e.code === "Done"
+                ) {
                   e.preventDefault()
                   if (chatModal) {
                     const docRef = doc(collection(db, chatColName), chatModal)
