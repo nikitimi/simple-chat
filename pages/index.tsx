@@ -1,6 +1,7 @@
 import {
   arrayUnion,
   collection,
+  deleteDoc,
   doc,
   DocumentData,
   getDoc,
@@ -111,6 +112,7 @@ const SideBar = ({ blur }: { blur: boolean }) => {
     return () => {
       isMounted = false
     }
+    //eslint-disable-next-line react-hooks/exhaustive-deps
   }, [colRef, currentUser, dispatch])
 
   return (
@@ -183,6 +185,36 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
         (value: string) => !(value === currentUser?.email)
       )[0]
     : currentUser?.email
+
+  const handleSend = async () => {
+    if (message !== "") {
+      if (chatModal) {
+        const docRef = doc(collection(db, chatColName), chatModal)
+        const fetchChat = await getDoc(docRef)
+
+        const data = {
+          recipient,
+          sender: currentUser?.email,
+          sentTime: new Date().getTime(),
+          message,
+        }
+
+        if (fetchChat.exists()) {
+          dispatch(setChatHeads(null))
+          updateDoc(docRef, {
+            updatedAt: new Date().getTime(),
+            history: arrayUnion({ ...data }),
+          })
+        } else
+          setDoc(docRef, {
+            participants: [recipient, currentUser?.email],
+            updatedAt: new Date().getTime(),
+            history: arrayUnion({ ...data }),
+          })
+        setMessage("")
+      }
+    }
+  }
 
   useEffect(() => {
     let isMounted = true
@@ -258,37 +290,24 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
                   e.code === "Done"
                 ) {
                   e.preventDefault()
-                  if (chatModal) {
-                    const docRef = doc(collection(db, chatColName), chatModal)
-                    const fetchChat = await getDoc(docRef)
-
-                    const data = {
-                      recipient,
-                      sender: currentUser?.email,
-                      sentTime: new Date().getTime(),
-                      message,
-                    }
-
-                    if (fetchChat.exists()) {
-                      dispatch(setChatHeads(null))
-                      updateDoc(docRef, {
-                        updatedAt: new Date().getTime(),
-                        history: arrayUnion({ ...data }),
-                      })
-                    } else
-                      setDoc(docRef, {
-                        participants: [recipient, currentUser?.email],
-                        updatedAt: new Date().getTime(),
-                        history: arrayUnion({ ...data }),
-                      })
-                    setMessage("")
-                  }
+                  handleSend()
                 }
               }}
               className="w-full resize-none p-4 rounded-md focus:opacity-100 outline-none border duration-300 ease focus:border-blue-500 hover:opacity-100 opacity-10"
               placeholder="Enter a message..."
             />
           </form>
+          <button
+            disabled={message === ""}
+            className={`${
+              message === ""
+                ? "bg-slate-300 text-slate-400"
+                : "bg-green-400 text-white"
+            } rounded-md fixed z-10 right-2 bottom-10 px-2 py-1 `}
+            onClick={() => handleSend()}
+          >
+            Send
+          </button>
         </div>
       )}
     </div>
@@ -296,7 +315,7 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
 }
 
 const ChatHeader = () => {
-  const { chatHeader } = useAppSelector((s) => s.ui)
+  const { chatHeader, chatModal } = useAppSelector((s) => s.ui)
   const dispatch = useAppDispatch()
   return chatHeader ? (
     <div
@@ -305,7 +324,10 @@ const ChatHeader = () => {
     >
       <button onClick={() => dispatch(toggleModal("chatHeader"))}>x</button>
       <h1>ChatHeader</h1>
-      <Minimize name="Delete Chat" onClick={() => console.log("delete")} />
+      <Minimize
+        name="Delete Chat"
+        onClick={() => deleteDoc(doc(db, `/chats/${chatModal}`))}
+      />
     </div>
   ) : (
     <></>
