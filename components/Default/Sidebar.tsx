@@ -8,7 +8,7 @@ import {
   limit,
 } from "firebase/firestore"
 import Image from "next/image"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { chatColName } from "~/pages"
 import { db } from "~/utils/firebase"
 import { toggleModal } from "~/utils/redux/actions/uiActions"
@@ -22,6 +22,7 @@ const SideBar = ({ blur }: { blur: boolean }) => {
   const { chatHeads } = useAppSelector((s) => s.user)
   const { currentUser } = useAuth()
   const colRef = collection(db, chatColName)
+  const [counter, setCounter] = useState(-1)
 
   useEffect(() => {
     let isMounted = true
@@ -44,6 +45,7 @@ const SideBar = ({ blur }: { blur: boolean }) => {
                 snap.forEach((document) => {
                   chatHeadsHolder.push(document.id)
                 })
+              setCounter(counter + 1)
               dispatch(setChatHeads(chatHeadsHolder))
             }
           )
@@ -59,8 +61,9 @@ const SideBar = ({ blur }: { blur: boolean }) => {
     return () => {
       isMounted = false
     }
-  }, [colRef, currentUser, dispatch, chatHeads])
+  }, [colRef, dispatch, chatHeads, counter, currentUser])
 
+  // console.log(counter)
   return (
     <section
       className={`${
@@ -77,12 +80,13 @@ const SideBar = ({ blur }: { blur: boolean }) => {
         +
       </button>
       <div className="grid justify-center grid-rows-7 gap-4">
-        {chatHeads?.map((v) => {
+        {chatHeads?.map((v, i) => {
           const color = "bg-blue-300"
           return (
             <div
-              className="
-              shadow-md w-full max-w-fit px-4 py-2 overflow-hidden rounded-full"
+              className={`${
+                counter > 0 && i === 0 ? color : ""
+              } shadow-md w-full max-w-fit px-4 py-2 overflow-hidden rounded-full`}
               key={v}
             >
               <button
@@ -93,14 +97,12 @@ const SideBar = ({ blur }: { blur: boolean }) => {
                   button.parentElement?.parentElement
                     ?.querySelectorAll("button")
                     .forEach((button) => {
-                      console.log("s")
                       button.parentElement?.classList.remove(color)
                     })
                   button.parentElement?.classList.add(color)
                   console.log("chatModals")
                   dispatch(setChatModal(v))
                 }}
-                onFocus={(e) => console.log(e)}
               >
                 {v.substring(20, v.length)}
                 {/* <Image
