@@ -1,82 +1,35 @@
-import {
-  doc,
-  type DocumentData,
-  getDoc,
-  DocumentSnapshot,
-  arrayUnion,
-  runTransaction,
-} from "firebase/firestore"
-// import Image from "next/image"
+import { doc, runTransaction } from "firebase/firestore"
+import { InferGetServerSidePropsType } from "next"
 import Link from "next/link"
-import { useRouter } from "next/router"
-import React, { MouseEvent, useEffect, useState } from "react"
-import { Loading } from "~/components"
-import { useAuth } from "~/components/AuthContext"
+import React from "react"
 import Center from "~/components/Center"
+import { UserDataTypes } from "~/components/types"
+
 import { db } from "~/utils/firebase"
 import { useAppSelector } from "~/utils/redux/hooks"
 
-type StateTypes = {
-  displayName: string
-  email: string
-  photoUrl: string
-  contacts: string[]
-}
-
-const UserID = () => {
+const UserID = (
+  props: InferGetServerSidePropsType<typeof getServerSideProps>
+) => {
+  const { userId, data } = props
   const DIMENSION = 32
-  const { push } = useRouter()
-  const { currentUser } = useAuth()
+  // const { push } = useRouter()
+  // const { currentUser } = useAuth()
   const { id } = useAppSelector((s) => s.user)
-  const { query } = useRouter()
-  const [{ displayName, email, contacts, photoUrl }, setState] = useState<
-    StateTypes | DocumentData
-  >({
-    displayName: "",
-    email: "",
-    photoUrl: "",
-    contacts: [],
-  })
-  const userId =
-    typeof query.userId === "string" ? query.userId : `${query.userId}`
 
-  useEffect(() => {
-    let isMounted = true
-    const fetchUserInfo = async () => {
-      try {
-        const userDoc: DocumentSnapshot<DocumentData> = await getDoc(
-          doc(db, `/users/${userId}`)
-        )
-        if (userDoc.exists()) {
-          const rest: StateTypes | DocumentData = userDoc.data()
-          setState(rest)
-        }
-      } catch (err) {
-        console.log(err)
-      }
-    }
-    if (isMounted) {
-      console.log("Dynamic user mounted!")
-      fetchUserInfo()
-    }
-  }, [userId])
+  if (data) {
+    const { displayName, email, photoUrl } = data
 
-  return (
-    <Center>
-      <Link href="/" className="underline absolute top-2 left-2">
-        Go back
-      </Link>
-      {/* <Image
-        src={photoUrl}
-        height={DIMENSION}
-        width={DIMENSION}
-        alt="ProfPic"
-      /> */}
-      <h1>{email}</h1>
-      <h3>{displayName}</h3>
-      {id !== userId && (
-        <>
-          <button
+    return (
+      <Center>
+        <Link href="/" className="underline absolute top-2 left-2">
+          Go back
+        </Link>
+        <h1>{email}</h1>
+        <h3>{displayName}</h3>
+        {id !== userId && (
+          <>
+            {/* <button
             onClick={async (e: MouseEvent<HTMLButtonElement>) => {
               if (!currentUser) return push("/signin")
               const button: HTMLButtonElement = e.currentTarget
@@ -101,15 +54,30 @@ const UserID = () => {
             }}
           >
             Add to Contact
-          </button>
-          {/* <label>Mutual Contacts</label>
-          {contacts.map((v: string) => (
-            <p key={v}>{v}</p>
-          ))} */}
-        </>
-      )}
-    </Center>
-  )
+          </button> */}
+          </>
+        )}
+      </Center>
+    )
+  }
+  return <Center>404 User not found</Center>
+}
+
+export const getServerSideProps = async (ctx: {
+  params: { userId: string }
+}) => {
+  const { userId } = ctx.params
+
+  async function fetchUserInfo() {
+    const docRef = doc(db, `/users/${userId}`)
+    return await runTransaction(db, async (tsx) => {
+      const userDoc = await tsx.get(docRef)
+      return userDoc.exists() && (userDoc.data() as UserDataTypes)
+    })
+  }
+  const data = await fetchUserInfo()
+
+  return { props: { data, userId } }
 }
 
 export default UserID

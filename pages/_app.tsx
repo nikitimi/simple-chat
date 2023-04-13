@@ -1,7 +1,7 @@
 import "~/styles/globals.css"
 import type { AppProps } from "next/app"
 import { AuthProvider, useAuth } from "~/components/AuthContext"
-import { useContext, useEffect } from "react"
+import { useEffect } from "react"
 import { useAppDispatch } from "~/utils/redux/hooks"
 import { setCurrentId } from "~/utils/redux/actions/userActions"
 import {

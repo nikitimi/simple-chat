@@ -43,7 +43,7 @@ export default function Home() {
   }, [dispatch, currentUser, id])
 
   return (
-    <Main title="home" description="This is a landing page">
+    <Main title="Chats" description="This is a landing page">
       <Header blur={messageModal || chatHeader} />
       {currentUser && <ChatHeader />}
       {currentUser && <MessageModal />}
@@ -55,7 +55,7 @@ export default function Home() {
       ) : (
         <Center>
           <h2>
-            Sign in to start messaging{" "}
+            {`Sign in to start messaging `}
             <span className="underline">
               <Link href="/signin">Click to Sign in</Link>
             </span>

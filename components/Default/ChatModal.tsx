@@ -26,7 +26,7 @@ import { Minimize } from "../Buttons"
 import { ChatIDDataTypes, HistoryTypes, MessageTypes } from "../types"
 
 interface ChatTypes extends ChatIDDataTypes {
-  history: HistoryTypes[]
+  history?: HistoryTypes[]
 }
 
 const ChatModal = ({ blur }: { blur: boolean }) => {
@@ -95,18 +95,17 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
             (snap) => {
               let his: HistoryTypes[] = []
               if (!snap.empty)
-                snap.forEach(
-                  (doc: QueryDocumentSnapshot<HistoryTypes> | DocumentData) => {
-                    his.push(doc.data())
-                  }
-                )
+                snap.forEach((doc) => {
+                  his.push(doc.data() as HistoryTypes)
+                })
               setChatData({ history: his.reverse() })
             }
           )
-          const chatIdData: ChatIDDataTypes | DocumentData = await getDoc(
-            doc(db, `/chats/${chatModal}`)
-          )
-          setChatData((p) => ({ ...p, ...chatIdData.data() }))
+          const chatIdData = await getDoc(doc(db, `/chats/${chatModal}`))
+          setChatData((p) => ({
+            ...p,
+            ...(chatIdData.data() as ChatIDDataTypes),
+          }))
         }
       } catch (err) {
         console.log(err)
@@ -138,26 +137,24 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
         </div>
       )}
       <div className="flex flex-col h-full overflow-y-scroll">
-        {chatData?.history.map(
-          ({ message, sentTime, sender }: HistoryTypes, i: number) => {
-            const sentT = new Date()
-            sentT.setTime(sentTime)
-            const time = `${sentT.getHours()}:${sentT.getMinutes()}`
-            return (
-              <div
-                key={i}
-                className={`${
-                  sender === currentUser?.email
-                    ? "bg-blue-400 text-white ml-auto"
-                    : "bg-slate-200 text-black mr-auto"
-                } w-fit rounded-md px-4 py-2 m-2`}
-              >
-                <p>{message}</p>
-                <p>{time}</p>
-              </div>
-            )
-          }
-        )}
+        {chatData?.history?.map(({ message, sentTime, sender }, i) => {
+          const sentT = new Date()
+          sentT.setTime(sentTime)
+          const time = `${sentT.getHours()}:${sentT.getMinutes()}`
+          return (
+            <div
+              key={i}
+              className={`${
+                sender === currentUser?.email
+                  ? "bg-blue-400 text-white ml-auto"
+                  : "bg-slate-200 text-black mr-auto"
+              } w-fit rounded-md px-4 py-2 m-2`}
+            >
+              <p>{message}</p>
+              <p>{time}</p>
+            </div>
+          )
+        })}
       </div>
       {chatData && (
         <div className="fixed bottom-0 w-4/5 right-0">

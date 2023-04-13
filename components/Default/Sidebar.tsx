@@ -7,7 +7,6 @@ import {
   orderBy,
   limit,
 } from "firebase/firestore"
-import Image from "next/image"
 import { useEffect, useState } from "react"
 import { chatColName } from "~/pages"
 import { db } from "~/utils/firebase"
@@ -43,6 +42,7 @@ const SideBar = ({ blur }: { blur: boolean }) => {
               let chatHeadsHolder: string[] = []
               if (!snap.empty)
                 snap.forEach((document) => {
+                  console.log(document.id)
                   chatHeadsHolder.push(document.id)
                 })
               setCounter(counter + 1)

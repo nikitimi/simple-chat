@@ -1,3 +1,4 @@
+export const SET_USER = "SET_USER"
 export const SET_CHAT = "SET_CHAT"
 export const SET_CONTACT_LIST = "SET_CONTACT_LIST"
 export const SET_CHAT_HEADS = "SET_CHAT_HEADS"

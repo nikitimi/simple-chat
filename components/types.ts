@@ -14,6 +14,21 @@ export type AuthTypes = {
   email: EmailType["email"]
   password: PasswordType["password"]
 }
+
+export type UserDataTypes = {
+  contacts: string[]
+  displayName: string
+  email: string
+  emailVerified: boolean
+  lastOnline: number
+  photoUrl: string
+}
+
+export interface UserDataInterface {
+  data: UserDataTypes
+  userId: string
+}
+
 export type AuthContextValue = {
   currentUser: Auth["currentUser"]
   signin: (props: AuthTypes) => Promise<UserCredential | void>
