@@ -41,6 +41,7 @@ const UserID = () => {
     typeof query.userId === "string" ? query.userId : `${query.userId}`
 
   useEffect(() => {
+    let isMounted = true
     const fetchUserInfo = async () => {
       try {
         const userDoc: DocumentSnapshot<DocumentData> = await getDoc(
@@ -54,9 +55,11 @@ const UserID = () => {
         console.log(err)
       }
     }
-    fetchUserInfo()
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    if (isMounted) {
+      console.log("Dynamic user mounted!")
+      fetchUserInfo()
+    }
+  }, [userId])
 
   return (
     <Center>

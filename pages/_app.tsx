@@ -1,7 +1,7 @@
 import "~/styles/globals.css"
 import type { AppProps } from "next/app"
 import { AuthProvider, useAuth } from "~/components/AuthContext"
-import { useEffect } from "react"
+import { useContext, useEffect } from "react"
 import { useAppDispatch } from "~/utils/redux/hooks"
 import { setCurrentId } from "~/utils/redux/actions/userActions"
 import {
@@ -32,26 +32,29 @@ const MainComponent = ({ Component, pageProps }: AppProps) => {
 
   useEffect(() => {
     let isMounted = true
-    if (currentUser && isMounted) {
-      const fetchUser = async () => {
-        try {
-          const snap = await getDocs(
-            query(
-              collection(db, "users"),
-              where("email", "==", currentUser.email)
-            )
+
+    const fetchUser = async () => {
+      try {
+        const snap = await getDocs(
+          query(
+            collection(db, "users"),
+            where("email", "==", currentUser?.email)
           )
-          if (!snap.empty)
-            snap.forEach((document) => {
-              updateDoc(doc(db, `/users/${document.id}`), {
-                lastOnline: new Date().getTime(),
-              })
-              dispatch(setCurrentId(document.id))
+        )
+        if (!snap.empty)
+          snap.forEach(async (document) => {
+            await updateDoc(doc(db, `/users/${document.id}`), {
+              lastOnline: new Date().getTime(),
             })
-        } catch (err) {
-          console.log(err)
-        }
+            console.log(document.id)
+            dispatch(setCurrentId(document.id))
+          })
+      } catch (err) {
+        console.log(err)
       }
+    }
+    if (isMounted) {
+      console.log("ID mounted!")
       fetchUser()
     }
     return () => {

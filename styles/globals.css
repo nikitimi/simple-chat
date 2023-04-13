@@ -2,7 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  /* html {
+    @apply overflow-hidden;
+  } */
+}
+
 @layer utilities {
+  .custom-blur {
+    @apply bg-black/30;
+  }
   .delay-1 {
     animation-delay: 100ms;
   }

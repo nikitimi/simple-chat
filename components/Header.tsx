@@ -17,7 +17,7 @@ export const Header = ({ blur }: { blur: boolean }) => {
   return (
     <header
       className={`${
-        blur ? "blur-sm" : ""
+        blur ? "custom-blur" : ""
       } bg-slate-50 border-b border-slate-200 p-4 capitalize duration-300 ease`}
     >
       <nav>

@@ -25,6 +25,24 @@ export type AuthContextValue = {
   googleSignIn: () => void
 }
 
+export type HistoryTypes = {
+  message: string
+  recipient: string
+  sender: string
+  sentTime: number
+}
+
+export type ChatIDDataTypes = {
+  participants?: string[]
+  updatedAt?: number
+}
+export type MessageTypes = {
+  recipient: string
+  sender: string
+  sentTime: number
+  message: string
+}
+
 export interface TextfieldTypes extends HTMLAttributes<HTMLInputElement> {
   name: string
   dataList?: any[]
