@@ -88,7 +88,7 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
               collection(db, `/chats/${chatModal}/history`),
               where("recipient", "==", recipient),
               orderBy("sentTime", "desc"),
-              limit(25)
+              limit(7)
             ),
             (snap) => {
               let his: HistoryTypes[] = []
@@ -98,7 +98,7 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
                     his.push(doc.data())
                   }
                 )
-              setChatData({ history: his })
+              setChatData({ history: his.reverse() })
             }
           )
           const chatIdData: ChatIDDataTypes | DocumentData = await getDoc(
@@ -135,8 +135,8 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
           </button>
         </div>
       )}
-      <div className="flex flex-col-reverse h-full overflow-y-scroll">
-        {chatData?.history?.map(
+      <div className="flex flex-col h-full overflow-y-scroll">
+        {chatData?.history.map(
           ({ message, sentTime, sender }: HistoryTypes, i: number) => {
             const sentT = new Date()
             sentT.setTime(sentTime)

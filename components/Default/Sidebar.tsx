@@ -65,7 +65,7 @@ const SideBar = ({ blur }: { blur: boolean }) => {
     <section
       className={`${
         blur ? "custom-blur" : ""
-      } max-h-screenl bg-slate-50 border-r border-slate-200 w-1/4 text-center duration-300 ease`}
+      } min-h-[93vh] bg-slate-50 border-r border-slate-200 w-1/4 text-center duration-300 ease`}
     >
       <label htmlFor="create-message">Create a Message</label>
       <button

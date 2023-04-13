@@ -3,9 +3,9 @@
 @tailwind utilities;
 
 @layer base {
-  /* html {
+  html {
     @apply overflow-hidden;
-  } */
+  }
 }
 
 @layer utilities {
