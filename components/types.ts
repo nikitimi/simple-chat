@@ -16,16 +16,15 @@ export type AuthTypes = {
 }
 
 export type UserDataTypes = {
-  contacts: string[]
   displayName: string
   email: string
   emailVerified: boolean
   lastOnline: number
-  photoUrl: string
+  photoURL: string
 }
 
-export interface UserDataInterface {
-  data: UserDataTypes
+export interface UserDataInterface extends UserDataTypes {
+  contacts: UserDataTypes[]
   userId: string
 }
 

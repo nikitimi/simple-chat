@@ -8,6 +8,7 @@ import { ChatHeader, ChatModal } from "~/components/Default"
 import MessageModal from "~/components/Default/MessageModal"
 import SideBar from "~/components/Default/Sidebar"
 import { Header } from "~/components/Header"
+import { useUser } from "~/components/UserContext"
 import { db } from "~/utils/firebase"
 import { setContactList } from "~/utils/redux/actions/userActions"
 import { useAppDispatch, useAppSelector } from "~/utils/redux/hooks"
@@ -19,6 +20,7 @@ export default function Home() {
   const { messageModal, chatHeader } = useAppSelector((s) => s.ui)
   const { id } = useAppSelector((s) => s.user)
   const { currentUser } = useAuth()
+  // const { userData, checkNewID } = useUser()
 
   useEffect(() => {
     let isMounted = true
@@ -28,13 +30,13 @@ export default function Home() {
           const contacts = document.data()?.contacts
             ? document.data()?.contacts
             : []
-          console.log("contact_lists", id)
+          // console.log("contact_lists", id)
           dispatch(setContactList(contacts))
         })
       }
     }
     if (isMounted) {
-      console.log("CurrentUser data mounted!")
+      // console.log("CurrentUser data mounted!")
       fetchCurrentUserData()
     }
     return () => {

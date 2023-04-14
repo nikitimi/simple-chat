@@ -30,7 +30,7 @@ const SideBar = ({ blur }: { blur: boolean }) => {
       try {
         const chatHeadsDocs = await getDocs(colRef)
         if (currentUser && !chatHeadsDocs.empty && !chatHeads) {
-          console.log("chatHeads")
+          // console.log("chatHeads")
           onSnapshot(
             query(
               colRef,
@@ -42,7 +42,7 @@ const SideBar = ({ blur }: { blur: boolean }) => {
               let chatHeadsHolder: string[] = []
               if (!snap.empty)
                 snap.forEach((document) => {
-                  console.log(document.id)
+                  // console.log(document.id)
                   chatHeadsHolder.push(document.id)
                 })
               setCounter(counter + 1)
@@ -55,7 +55,7 @@ const SideBar = ({ blur }: { blur: boolean }) => {
       }
     }
     if (isMounted) {
-      console.log("Sidebar mounted!")
+      // console.log("Sidebar mounted!")
       fetchChats()
     }
     return () => {
@@ -100,7 +100,7 @@ const SideBar = ({ blur }: { blur: boolean }) => {
                       button.parentElement?.classList.remove(color)
                     })
                   button.parentElement?.classList.add(color)
-                  console.log("chatModals")
+                  // console.log("chatModals")
                   dispatch(setChatModal(v))
                 }}
               >

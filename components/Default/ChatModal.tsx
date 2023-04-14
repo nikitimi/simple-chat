@@ -82,7 +82,7 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
     let isMounted = true
     const getChatModal = async () => {
       try {
-        console.log("Get Chat Modal")
+        // console.log("Get Chat Modal")
 
         if (!chatModalEmpty) {
           onSnapshot(
@@ -112,7 +112,7 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
       }
     }
     if (isMounted) {
-      console.log("Chat Modal mounted!")
+      // console.log("Chat Modal mounted!")
       getChatModal()
     }
     return () => {

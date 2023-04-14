@@ -15,13 +15,16 @@ import {
 import { db } from "~/utils/firebase"
 import { Provider } from "react-redux"
 import store from "~/utils/redux/store"
+import { UserProvider } from "~/components/UserContext"
 
 export default function App({ ...rest }: AppProps) {
   return (
     <Provider store={store}>
-      <AuthProvider>
-        <MainComponent {...rest} />
-      </AuthProvider>
+      <UserProvider>
+        <AuthProvider>
+          <MainComponent {...rest} />
+        </AuthProvider>
+      </UserProvider>
     </Provider>
   )
 }
@@ -46,7 +49,7 @@ const MainComponent = ({ Component, pageProps }: AppProps) => {
             await updateDoc(doc(db, `/users/${document.id}`), {
               lastOnline: new Date().getTime(),
             })
-            console.log(document.id)
+            // console.log(document.id)
             dispatch(setCurrentId(document.id))
           })
       } catch (err) {
@@ -54,7 +57,7 @@ const MainComponent = ({ Component, pageProps }: AppProps) => {
       }
     }
     if (isMounted) {
-      console.log("ID mounted!")
+      // console.log("ID mounted!")
       fetchUser()
     }
     return () => {

@@ -1,4 +1,3 @@
-import { data } from "autoprefixer"
 import {
   doc,
   collection,
@@ -20,7 +19,7 @@ import { setChatHeads } from "~/utils/redux/actions/userActions"
 import { useAppSelector, useAppDispatch } from "~/utils/redux/hooks"
 import { useAuth } from "../AuthContext"
 import { Minimize } from "../Buttons"
-import { MessageTypes } from "../types"
+import type { MessageTypes } from "../types"
 
 const MessageModal = () => {
   const { currentUser } = useAuth()
