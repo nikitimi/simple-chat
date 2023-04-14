@@ -15,12 +15,16 @@ export type AuthTypes = {
   password: PasswordType["password"]
 }
 
-export type UserDataTypes = {
+export type UserMessageHeader = {
   displayName: string
   email: string
   emailVerified: boolean
-  lastOnline: number
   photoURL: string
+}
+
+export interface UserDataTypes extends UserMessageHeader {
+  description?: string
+  lastOnline: number
 }
 
 export interface UserDataInterface extends UserDataTypes {
@@ -28,7 +32,7 @@ export interface UserDataInterface extends UserDataTypes {
   userId: string
 }
 
-export type AuthContextValue = {
+export type AuthContextTypes = {
   currentUser: Auth["currentUser"]
   signin: (props: AuthTypes) => Promise<UserCredential | void>
   signup: (props: AuthTypes) => Promise<UserCredential | void>
@@ -39,22 +43,18 @@ export type AuthContextValue = {
   googleSignIn: () => void
 }
 
-export type HistoryTypes = {
+export type ClientMessageTypes = {
+  recipient: UserMessageHeader
   message: string
-  recipient: string
-  sender: string
   sentTime: number
+}
+export interface MessageInterface extends ClientMessageTypes {
+  sender: UserMessageHeader
 }
 
 export type ChatIDDataTypes = {
   participants?: string[]
   updatedAt?: number
-}
-export type MessageTypes = {
-  recipient: string
-  sender: string
-  sentTime: number
-  message: string
 }
 
 export interface TextfieldTypes extends HTMLAttributes<HTMLInputElement> {

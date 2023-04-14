@@ -17,14 +17,14 @@ import {
   type Auth,
   signInWithCredential,
 } from "firebase/auth"
-import type { AuthContextValue, AuthTypes } from "./types"
+import type { AuthContextTypes, AuthTypes } from "./types"
 import { Loading } from "./"
 import { getDocs, query, collection, where, addDoc } from "firebase/firestore"
 import { setCurrentId } from "~/utils/redux/actions/userActions"
 import { useAppDispatch } from "~/utils/redux/hooks"
 import Center from "./Center"
 
-const AuthContext = createContext<AuthContextValue>({
+const AuthContext = createContext<AuthContextTypes>({
   currentUser: null,
   signin: async () => {},
   signup: async () => {},

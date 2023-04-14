@@ -1,64 +1,70 @@
-import {
-  doc,
-  collection,
-  getDoc,
-  updateDoc,
-  arrayUnion,
-  setDoc,
-  addDoc,
-  runTransaction,
-  DocumentData,
-  DocumentReference,
-  DocumentSnapshot,
-} from "firebase/firestore"
-import { useRef, useState } from "react"
-import { chatColName } from "~/pages"
-import { db } from "~/utils/firebase"
+import React, { useRef, useState } from "react"
 import { toggleModal } from "~/utils/redux/actions/uiActions"
-import { setChatHeads } from "~/utils/redux/actions/userActions"
-import { useAppSelector, useAppDispatch } from "~/utils/redux/hooks"
+import { useAppDispatch, useAppSelector } from "~/utils/redux/hooks"
 import { useAuth } from "../AuthContext"
 import { Minimize } from "../Buttons"
-import type { MessageTypes } from "../types"
+import { useMessage } from "../MessageContext"
+import type { ClientMessageTypes, UserMessageHeader } from "../types"
+import { useUser } from "../UserContext"
+
+const initialRecipient = {
+  email: "",
+  displayName: "",
+  emailVerified: false,
+  photoURL: "",
+}
 
 const MessageModal = () => {
-  const { currentUser } = useAuth()
+  const { currentUserData } = useUser()
+  const { handleMessage } = useMessage()
   const dispatch = useAppDispatch()
-  const { id } = useAppSelector((s) => s.user)
-  const { contactList } = useAppSelector((s) => s.user)
   const { messageModal, submitContactMessage } = useAppSelector((s) => s.ui)
   const divRef = useRef<HTMLDivElement>(null)
-  const [recipient, setRecipient] = useState("")
-  const sender = currentUser?.email ? currentUser.email : ""
+  const [recipient, setRecipient] =
+    useState<UserMessageHeader>(initialRecipient)
 
-  async function handleSend(data: MessageTypes) {
-    const { recipient, sender, message } = data
-    if (message !== "") {
-      const createdId = `${id}${recipient}`
-      const docRef = doc(collection(db, chatColName), createdId)
-      const fetchChat = await getDoc(docRef)
-
-      const createMessage = async (
-        data: MessageTypes,
-        docRef: DocumentReference<DocumentData>,
-        docSnap: DocumentSnapshot<DocumentData>
-      ) => {
-        await runTransaction(db, async (tsx) => {
-          if (docSnap.exists()) {
-            dispatch(setChatHeads(null))
-            tsx.update(docRef, {
-              updatedAt: new Date().getTime(),
-            })
-          } else {
-            tsx.set(docRef, {
-              participants: [recipient, sender],
-              updatedAt: new Date().getTime(),
-            })
-          }
-          await addDoc(collection(docRef, "history"), data)
+  const handleChangeRecipient = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = divRef.current?.querySelector("input")
+    const div = divRef.current?.querySelector("#suggest")
+    if (input && div && currentUserData) {
+      const contactList = currentUserData.contacts.filter(({ displayName }) =>
+        displayName.toLowerCase().includes(input.value.toLowerCase())
+      )
+      const buttons = contactList.map(({ displayName, email }, i) => {
+        const button = document.createElement("button")
+        button.setAttribute("key", `${i}`)
+        button.classList.add("bg-blue-400")
+        button.setAttribute("value", email)
+        button.textContent = displayName
+        return button
+      })
+      const parent = document.createElement("div")
+      parent.setAttribute("id", "suggest")
+      parent.setAttribute("class", "flex flex-col overflow-y-auto")
+      parent.append(...buttons)
+      buttons.forEach((button) =>
+        button.addEventListener("click", (e) => {
+          e.preventDefault()
+          dispatch(toggleModal("submitContactMessage", true))
+          setRecipient(() => {
+            const { lastOnline, ...rest } = contactList.filter(
+              ({ email }) => email === button.value
+            )[0]
+            return rest
+          })
+          parent.classList.remove("flex")
+          parent.classList.add("hidden")
         })
-      }
-      createMessage(data, docRef, fetchChat)
+      )
+      div.replaceWith(parent)
+    }
+    dispatch(toggleModal("submitContactMessage", false))
+    setRecipient((p) => ({ ...p, displayName: e.target.value }))
+  }
+
+  function handleSend(data: ClientMessageTypes) {
+    if (data.message !== "") {
+      handleMessage(data)
     }
   }
 
@@ -78,12 +84,11 @@ const MessageModal = () => {
 
           handleSend({
             recipient,
-            sender,
             sentTime: new Date().getTime(),
             message: message ? message.value : "",
           })
 
-          setRecipient("")
+          setRecipient(initialRecipient)
           dispatch(toggleModal("messageModal"))
         }}
       >
@@ -93,39 +98,8 @@ const MessageModal = () => {
             type="text"
             placeholder="recipient..."
             className="w-full p-4 rounded-md"
-            value={recipient}
-            onChange={(e) => {
-              const input = divRef.current?.querySelector("input")
-              const div = divRef.current?.querySelector("#suggest")
-              if (input && div && contactList) {
-                const filtered = contactList.filter((value) =>
-                  value.toLowerCase().includes(input.value.toLowerCase())
-                )
-                const buttons = filtered.map((value, i) => {
-                  const button = document.createElement("button")
-                  button.setAttribute("key", `${i}`)
-                  button.classList.add("bg-blue-400")
-                  button.textContent = value
-                  return button
-                })
-                const parent = document.createElement("div")
-                parent.setAttribute("id", "suggest")
-                parent.setAttribute("class", "flex flex-col overflow-y-auto")
-                parent.append(...buttons)
-                buttons.forEach((button) =>
-                  button.addEventListener("click", (e) => {
-                    e.preventDefault()
-                    dispatch(toggleModal("submitContactMessage", true))
-                    setRecipient(button.innerText)
-                    parent.classList.remove("flex")
-                    parent.classList.add("hidden")
-                  })
-                )
-                div.replaceWith(parent)
-              }
-              dispatch(toggleModal("submitContactMessage", false))
-              setRecipient(e.target.value)
-            }}
+            value={recipient.displayName}
+            onChange={handleChangeRecipient}
           />
           <div className="flex flex-col" id="suggest">
             <button />
@@ -140,9 +114,9 @@ const MessageModal = () => {
         <button
           disabled={!submitContactMessage}
           className={`${
-            !submitContactMessage
-              ? "bg-slate-300 text-slate-500"
-              : "bg-green-500 text-white"
+            submitContactMessage
+              ? "add-contacts-button"
+              : "add-contacts-button-disabled"
           } rounded-md border px-2 w-full`}
         >
           Send

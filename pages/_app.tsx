@@ -2,8 +2,6 @@ import "~/styles/globals.css"
 import type { AppProps } from "next/app"
 import { AuthProvider, useAuth } from "~/components/AuthContext"
 import { useEffect } from "react"
-import { useAppDispatch } from "~/utils/redux/hooks"
-import { setCurrentId } from "~/utils/redux/actions/userActions"
 import {
   collection,
   getDocs,
@@ -15,28 +13,31 @@ import {
 import { db } from "~/utils/firebase"
 import { Provider } from "react-redux"
 import store from "~/utils/redux/store"
-import { UserProvider } from "~/components/UserContext"
+import { UserProvider, useUser } from "~/components/UserContext"
+import { MessageProvider } from "~/components/MessageContext"
+export { reportWebVitals } from "next-axiom"
 
 export default function App({ ...rest }: AppProps) {
   return (
     <Provider store={store}>
-      <UserProvider>
-        <AuthProvider>
-          <MainComponent {...rest} />
-        </AuthProvider>
-      </UserProvider>
+      <AuthProvider>
+        <UserProvider>
+          <MessageProvider>
+            <MainComponent {...rest} />
+          </MessageProvider>
+        </UserProvider>
+      </AuthProvider>
     </Provider>
   )
 }
 
 const MainComponent = ({ Component, pageProps }: AppProps) => {
   const { currentUser } = useAuth()
-  const dispatch = useAppDispatch()
+  const { setCurrentUserId } = useUser()
 
   useEffect(() => {
     let isMounted = true
-
-    const fetchUser = async () => {
+    async function fetchCurrentUserData() {
       try {
         const snap = await getDocs(
           query(
@@ -44,25 +45,25 @@ const MainComponent = ({ Component, pageProps }: AppProps) => {
             where("email", "==", currentUser?.email)
           )
         )
-        if (!snap.empty)
-          snap.forEach(async (document) => {
-            await updateDoc(doc(db, `/users/${document.id}`), {
-              lastOnline: new Date().getTime(),
-            })
-            // console.log(document.id)
-            dispatch(setCurrentId(document.id))
+        if (!snap.empty) {
+          const docId = snap.docs[0].id
+          await updateDoc(doc(db, `/users/${docId}`), {
+            lastOnline: new Date().getTime(),
           })
+          setCurrentUserId(docId)
+        }
       } catch (err) {
         console.log(err)
       }
     }
     if (isMounted) {
-      // console.log("ID mounted!")
-      fetchUser()
+      console.log("Fetching current id!")
+      fetchCurrentUserData()
     }
     return () => {
       isMounted = false
     }
-  }, [dispatch, currentUser])
+  }, [currentUser, setCurrentUserId])
+
   return <Component {...pageProps} />
 }

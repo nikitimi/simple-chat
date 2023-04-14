@@ -16,7 +16,7 @@ import { useAppSelector } from "~/utils/redux/hooks"
 const UserID = () => {
   const { query, push } = useRouter()
   const { currentUser } = useAuth()
-  const { userData, checkNewID } = useUser()
+  const { userData, checkUserID } = useUser()
   const [message, setMessage] = useState<string | null>(null)
   const [modal, toggleModal] = useState(false)
   const { id } = useAppSelector((s) => s.user)
@@ -42,12 +42,21 @@ const UserID = () => {
         await runTransaction(db, async (tsx) => {
           console.log("transaction runs")
           const currentUserDoc = await tsx.get(currentUserRef)
-          const { contacts, userId, ...rest } =
-            currentUserDoc.data() as UserDataInterface
-          if (contacts.filter(({ email }) => email === rest.email))
+          const { contacts } = currentUserDoc.data() as UserDataInterface
+          const userViewData = userData.filter(
+            ({ userId }) => userId === uid
+          )[0]
+          const isUserExistInContactList =
+            contacts.filter(({ email }) => email === userViewData.email)
+              .length !== 0
+          const mapUserViewData = () => {
+            const { contacts, userId, ...rest } = userViewData
+            return { ...rest }
+          }
+          if (isUserExistInContactList)
             return setMessage(`You've already added this user`)
           tsx.update(currentUserRef, {
-            contacts: arrayUnion(rest),
+            contacts: arrayUnion(mapUserViewData()),
           })
           // button-style
           button.classList.add(addContactBtnStyle)
@@ -58,11 +67,11 @@ const UserID = () => {
 
   useEffect(() => {
     let isMounted = true
-    if (isMounted) checkNewID(userId)
+    if (isMounted) checkUserID(userId)
     return () => {
       isMounted = false
     }
-  }, [checkNewID, userId])
+  }, [checkUserID, userId])
 
   if (isProfileTheUser) {
     push("/dashboard")
