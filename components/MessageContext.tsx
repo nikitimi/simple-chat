@@ -20,20 +20,23 @@ type ChatInfoTypes = {
   participants: string[]
   updatedAt: number
 }
-interface ChatsInterface extends MessageInterface {
-  chatId: string
+interface ChatsInterface {
+  [x: string]: MessageInterface[]
 }
 type MessageContextTypes = {
   chats: ChatsInterface[]
   chatHeads: string[]
+  chatHead: string | null
   handleMessage: (data: ClientMessageTypes) => Promise<void>
-  // fetchChats: (data) => Promise<void>
+  selectChatHead: (value: string) => void
 }
 
 const MessageContext = createContext<MessageContextTypes>({
   chats: [],
   chatHeads: [],
+  chatHead: null,
   handleMessage: async () => {},
+  selectChatHead: () => null,
 })
 
 export const useMessage = () => useContext(MessageContext)
@@ -46,6 +49,8 @@ export const MessageProvider: React.FC<any> = ({
   const colRef = collection(db, "chats")
   const [chats, setChats] = useState<ChatsInterface[]>([])
   const [chatHeads, setChatHeads] = useState<string[]>([])
+  const [chatHead, setChatHeadHook] = useState<string>("")
+  const selectChatHead = (value: string) => setChatHeadHook(value)
 
   async function handleMessage(data: ClientMessageTypes) {
     if (currentUserData) {
@@ -99,17 +104,26 @@ export const MessageProvider: React.FC<any> = ({
         )[0]
         const chatQuery = query(
           collection(db, `/chats/${chatId}/history`),
-          where("recipient.email", "==", recipient),
+          where(
+            "recipient.email",
+            "==",
+            recipient ? recipient : currentUserData.email
+          ),
           orderBy("sentTime", "desc"),
-          limit(7)
+          limit(8)
         )
-        console.log({ chatId })
         const snap = await getDocs(chatQuery)
+        // let objArr = []
+        let array: MessageInterface[] = []
         snap.forEach((doc) => {
-          setChats((p) => [
-            ...p,
-            { ...(doc.data() as MessageInterface), chatId },
-          ])
+          array.push({ ...(doc.data() as MessageInterface) })
+        })
+        // objArr.push({ [chatId]: array.reverse() })
+        setChats((p) => {
+          let x = [...p, { [chatId]: array.reverse() }]
+          const index = x.findIndex((obj) => Object.keys(obj)[0] === chatId)
+          x[index] = { [chatId]: array }
+          return x
         })
       }
     } catch (err) {
@@ -132,12 +146,14 @@ export const MessageProvider: React.FC<any> = ({
               limit(7)
             ),
             (snap) => {
-              setChatHeads([])
-              if (!snap.empty)
+              if (!snap.empty) {
+                let array: string[] = []
                 snap.forEach((document) => {
-                  setChatHeads((p) => [...p, document.id])
+                  array.push(document.id)
                   fetchChats(document.id, document.data() as ChatInfoTypes)
                 })
+                setChatHeads(array)
+              }
             }
           )
         } catch (err) {
@@ -156,7 +172,9 @@ export const MessageProvider: React.FC<any> = ({
   const value = {
     chats,
     chatHeads,
+    chatHead,
     handleMessage,
+    selectChatHead,
   }
 
   return (

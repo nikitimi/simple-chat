@@ -15,6 +15,7 @@ import {
   DocumentSnapshot,
   DocumentReference,
 } from "firebase/firestore"
+import Image from "next/image"
 import { useState, useEffect } from "react"
 import { chatColName } from "~/pages"
 import { db } from "~/utils/firebase"
@@ -23,6 +24,7 @@ import { setChatHeads } from "~/utils/redux/actions/userActions"
 import { useAppSelector, useAppDispatch } from "~/utils/redux/hooks"
 import { useAuth } from "../AuthContext"
 import { Minimize } from "../Buttons"
+import { useMessage } from "../MessageContext"
 import type { ChatIDDataTypes, MessageInterface } from "../types"
 
 interface ChatTypes extends ChatIDDataTypes {
@@ -31,94 +33,23 @@ interface ChatTypes extends ChatIDDataTypes {
 
 const ChatModal = ({ blur }: { blur: boolean }) => {
   const { currentUser } = useAuth()
+  const { chatHead, chats, handleMessage } = useMessage()
   const dispatch = useAppDispatch()
   const { messageModal, chatHeader, chatModal } = useAppSelector((s) => s.ui)
-  const recipient = chatModal.substring(20, chatModal.length)
-  const sender = currentUser?.email ? currentUser.email : ""
   const [message, setMessage] = useState("")
-  const [chatData, setChatData] = useState<ChatTypes>()
-  const chatModalEmpty = chatModal === ""
+  const userActiveChats = chats.filter(
+    (obj) => Object.keys(obj)[0] === chatHead
+  )[0]
+
+  const userActiveData = userActiveChats
+    ? Object.values(userActiveChats)[0][0].recipient
+    : null
   const messageData = {
-    recipient,
-    sender,
+    recipient: userActiveData,
     sentTime: new Date().getTime(),
     message,
   }
-
-  async function handleSend(data: MessageInterface) {
-    const { recipient, sender, message } = data
-    if (message !== "") {
-      if (chatModal) {
-        const docRef = doc(collection(db, chatColName), chatModal)
-        const fetchChat = await getDoc(docRef)
-
-        const createMessage = async (
-          data: MessageInterface,
-          docRef: DocumentReference<DocumentData>,
-          docSnap: DocumentSnapshot<DocumentData>
-        ) => {
-          await runTransaction(db, async (tsx) => {
-            if (docSnap.exists()) {
-              dispatch(setChatHeads(null))
-              tsx.update(docRef, {
-                updatedAt: new Date().getTime(),
-              })
-            } else {
-              tsx.set(docRef, {
-                participants: [recipient, sender],
-                updatedAt: new Date().getTime(),
-              })
-            }
-            await addDoc(collection(docRef, "history"), data)
-          })
-        }
-        createMessage(data, docRef, fetchChat)
-        setMessage("")
-      }
-    }
-  }
-
-  useEffect(() => {
-    let isMounted = true
-    const getChatModal = async () => {
-      try {
-        // console.log("Get Chat Modal")
-
-        if (!chatModalEmpty) {
-          onSnapshot(
-            query(
-              collection(db, `/chats/${chatModal}/history`),
-              where("recipient", "==", recipient),
-              orderBy("sentTime", "desc"),
-              limit(7)
-            ),
-            (snap) => {
-              let his: MessageInterface[] = []
-              if (!snap.empty)
-                snap.forEach((doc) => {
-                  his.push(doc.data() as MessageInterface)
-                })
-              setChatData({ history: his.reverse() })
-            }
-          )
-          const chatIdData = await getDoc(doc(db, `/chats/${chatModal}`))
-          setChatData((p) => ({
-            ...p,
-            ...(chatIdData.data() as ChatIDDataTypes),
-          }))
-        }
-      } catch (err) {
-        console.log(err)
-      }
-    }
-    if (isMounted) {
-      // console.log("Chat Modal mounted!")
-      getChatModal()
-    }
-    return () => {
-      isMounted = false
-    }
-  }, [chatModal, chatModalEmpty, recipient])
+  const DIMENSION = 80
 
   return (
     <div
@@ -126,38 +57,50 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
         blur ? "custom-blur" : ""
       } w-full min-h-1/2 max-h-screen bg-slate-50 duration-300 ease`}
     >
-      {chatData && (
-        <div className="bg-yellow-400 relative text-center py-2 px-1">
+      {userActiveData && (
+        <div className="relative h-fit text-center py-2 px-1">
           <button
+            className="absolute inset-x-0 bg-slate-200"
             disabled={messageModal || chatHeader}
             onClick={() => dispatch(toggleModal("chatHeader"))}
           >
-            <h1>{recipient}</h1>
+            <div className="relative w-fit rounded-full overflow-hidden">
+              <Image
+                width={DIMENSION}
+                height={DIMENSION}
+                src={userActiveData.photoURL}
+                alt="ava-photo"
+              />
+            </div>
+            <h1>{userActiveData.displayName}</h1>
           </button>
         </div>
       )}
-      <div className="flex flex-col h-full overflow-y-scroll">
-        {chatData?.history?.map(({ message, sentTime, sender }, i) => {
-          const sentT = new Date()
-          sentT.setTime(sentTime)
-          const time = `${sentT.getHours()}:${sentT.getMinutes()}`
-          return (
-            <div
-              key={i}
-              className={`${
-                sender.email === currentUser?.email
-                  ? "bg-blue-400 text-white ml-auto"
-                  : "bg-slate-200 text-black mr-auto"
-              } w-fit rounded-md px-4 py-2 m-2`}
-            >
-              <p>{message}</p>
-              <p>{time}</p>
-            </div>
-          )
-        })}
+      <div className="flex flex-col h-min overflow-y-scroll">
+        {userActiveChats &&
+          Object.values(userActiveChats)[0].map(
+            ({ message, sentTime, sender }, i) => {
+              const sentT = new Date()
+              sentT.setTime(sentTime)
+              const time = `${sentT.getHours()}:${sentT.getMinutes()}`
+              return (
+                <div
+                  key={i}
+                  className={`${
+                    sender.email === currentUser?.email
+                      ? "bg-blue-400 text-white ml-auto"
+                      : "bg-slate-200 text-black mr-auto"
+                  } w-min rounded-md px-4 py-2 m-2 `}
+                >
+                  <p>{message}</p>
+                  <p>{time}</p>
+                </div>
+              )
+            }
+          )}
       </div>
-      {chatData && (
-        <div className="fixed bottom-0 w-4/5 right-0">
+      {userActiveData && (
+        <div className="fixed bottom-2 w-2/3 right-4">
           <form>
             <textarea
               required
@@ -175,7 +118,18 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
                   e.code === "Done"
                 ) {
                   e.preventDefault()
-                  // handleSend(messageData)
+                  const { recipient, ...rest } = messageData
+                  handleMessage({
+                    recipient: recipient
+                      ? recipient
+                      : {
+                          email: "",
+                          emailVerified: false,
+                          photoURL: "/user.png",
+                          displayName: "foobar",
+                        },
+                    ...rest,
+                  })
                 }
               }}
               className="w-full resize-none p-4 rounded-md focus:opacity-100 outline-none border duration-300 ease focus:border-blue-500 hover:opacity-100 opacity-10"
@@ -188,11 +142,22 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
               message === ""
                 ? "bg-slate-300 text-slate-400"
                 : "bg-green-400 text-white"
-            } rounded-md fixed z-10 right-2 bottom-10 px-2 py-1 `}
-            onClick={
-              () => console.log("messahe")
-              // handleSend(messageData)
-            }
+            } rounded-md fixed z-10 right-6 bottom-10 px-2 py-1 `}
+            onClick={() => {
+              const { recipient, ...rest } = messageData
+              handleMessage({
+                recipient: recipient
+                  ? recipient
+                  : {
+                      email: "",
+                      emailVerified: false,
+                      photoURL: "/user.png",
+                      displayName: "foobar",
+                    },
+                ...rest,
+              })
+              setMessage("")
+            }}
           >
             Send
           </button>
@@ -203,8 +168,9 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
 }
 
 const ChatHeader = () => {
-  const { chatHeader, chatModal } = useAppSelector((s) => s.ui)
+  const { chatHeader } = useAppSelector((s) => s.ui)
   const dispatch = useAppDispatch()
+  const { chatHead } = useMessage()
   return chatHeader ? (
     <div
       className="absolute z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-100
@@ -214,7 +180,7 @@ const ChatHeader = () => {
       <h1>ChatHeader</h1>
       <Minimize
         name="Delete Chat"
-        onClick={() => deleteDoc(doc(db, `/chats/${chatModal}`))}
+        onClick={() => deleteDoc(doc(db, `/chats/${chatHead}`))}
       />
     </div>
   ) : (
