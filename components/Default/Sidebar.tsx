@@ -14,10 +14,12 @@ import { toggleModal } from "~/utils/redux/actions/uiActions"
 import { setChatHeads, setChatModal } from "~/utils/redux/actions/userActions"
 import { useAppDispatch, useAppSelector } from "~/utils/redux/hooks"
 import { useAuth } from "../AuthContext"
+import { useMessage } from "../MessageContext"
 
 const SideBar = ({ blur }: { blur: boolean }) => {
   const dispatch = useAppDispatch()
   const { messageModal, chatHeader } = useAppSelector((s) => s.ui)
+  const { chatHeads } = useMessage()
 
   return (
     <section
@@ -34,6 +36,19 @@ const SideBar = ({ blur }: { blur: boolean }) => {
       >
         +
       </button>
+      <div className="grid grid-rows-7">
+        {chatHeads.map((v, i) => (
+          <button
+            key={v}
+            onClick={() => {
+              console.log(chatHeads[i])
+            }}
+            className="rounded-full bg-yellow-300"
+          >
+            .
+          </button>
+        ))}
+      </div>
       <div className="grid justify-center grid-rows-7 gap-4"></div>
     </section>
   )

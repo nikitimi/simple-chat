@@ -23,10 +23,10 @@ import { setChatHeads } from "~/utils/redux/actions/userActions"
 import { useAppSelector, useAppDispatch } from "~/utils/redux/hooks"
 import { useAuth } from "../AuthContext"
 import { Minimize } from "../Buttons"
-import { ChatIDDataTypes, HistoryTypes, MessageTypes } from "../types"
+import type { ChatIDDataTypes, MessageInterface } from "../types"
 
 interface ChatTypes extends ChatIDDataTypes {
-  history?: HistoryTypes[]
+  history?: MessageInterface[]
 }
 
 const ChatModal = ({ blur }: { blur: boolean }) => {
@@ -45,7 +45,7 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
     message,
   }
 
-  async function handleSend(data: MessageTypes) {
+  async function handleSend(data: MessageInterface) {
     const { recipient, sender, message } = data
     if (message !== "") {
       if (chatModal) {
@@ -53,7 +53,7 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
         const fetchChat = await getDoc(docRef)
 
         const createMessage = async (
-          data: MessageTypes,
+          data: MessageInterface,
           docRef: DocumentReference<DocumentData>,
           docSnap: DocumentSnapshot<DocumentData>
         ) => {
@@ -93,10 +93,10 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
               limit(7)
             ),
             (snap) => {
-              let his: HistoryTypes[] = []
+              let his: MessageInterface[] = []
               if (!snap.empty)
                 snap.forEach((doc) => {
-                  his.push(doc.data() as HistoryTypes)
+                  his.push(doc.data() as MessageInterface)
                 })
               setChatData({ history: his.reverse() })
             }
@@ -145,7 +145,7 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
             <div
               key={i}
               className={`${
-                sender === currentUser?.email
+                sender.email === currentUser?.email
                   ? "bg-blue-400 text-white ml-auto"
                   : "bg-slate-200 text-black mr-auto"
               } w-fit rounded-md px-4 py-2 m-2`}
@@ -175,7 +175,7 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
                   e.code === "Done"
                 ) {
                   e.preventDefault()
-                  handleSend(messageData)
+                  // handleSend(messageData)
                 }
               }}
               className="w-full resize-none p-4 rounded-md focus:opacity-100 outline-none border duration-300 ease focus:border-blue-500 hover:opacity-100 opacity-10"
@@ -189,7 +189,10 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
                 ? "bg-slate-300 text-slate-400"
                 : "bg-green-400 text-white"
             } rounded-md fixed z-10 right-2 bottom-10 px-2 py-1 `}
-            onClick={() => handleSend(messageData)}
+            onClick={
+              () => console.log("messahe")
+              // handleSend(messageData)
+            }
           >
             Send
           </button>

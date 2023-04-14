@@ -15,11 +15,24 @@ import { db } from "~/utils/firebase"
 import { ClientMessageTypes, MessageInterface } from "./types"
 import { useUser } from "./UserContext"
 
+type ChatInfoTypes = {
+  messageId: string
+  participants: string[]
+  updatedAt: number
+}
+interface ChatsInterface extends MessageInterface {
+  chatId: string
+}
 type MessageContextTypes = {
+  chats: ChatsInterface[]
+  chatHeads: string[]
   handleMessage: (data: ClientMessageTypes) => Promise<void>
+  // fetchChats: (data) => Promise<void>
 }
 
 const MessageContext = createContext<MessageContextTypes>({
+  chats: [],
+  chatHeads: [],
   handleMessage: async () => {},
 })
 
@@ -29,8 +42,10 @@ export const MessageProvider: React.FC<any> = ({
 }: {
   children: React.ReactNode
 }) => {
-  const { currentUserId, currentUserData, checkUserID } = useUser()
+  const { currentUserId, currentUserData } = useUser()
   const colRef = collection(db, "chats")
+  const [chats, setChats] = useState<ChatsInterface[]>([])
+  const [chatHeads, setChatHeads] = useState<string[]>([])
 
   async function handleMessage(data: ClientMessageTypes) {
     if (currentUserData) {
@@ -76,11 +91,37 @@ export const MessageProvider: React.FC<any> = ({
     }
   }
 
+  async function fetchChats(chatId: string, data: ChatInfoTypes) {
+    try {
+      if (currentUserData) {
+        const recipient = data.participants.filter(
+          (v) => !v.includes(currentUserData.email)
+        )[0]
+        const chatQuery = query(
+          collection(db, `/chats/${chatId}/history`),
+          where("recipient.email", "==", recipient),
+          orderBy("sentTime", "desc"),
+          limit(7)
+        )
+        console.log({ chatId })
+        const snap = await getDocs(chatQuery)
+        snap.forEach((doc) => {
+          setChats((p) => [
+            ...p,
+            { ...(doc.data() as MessageInterface), chatId },
+          ])
+        })
+      }
+    } catch (err) {
+      console.log(err)
+    }
+  }
+
   useEffect(() => {
     let isMounted = true
-    async function fetchChats() {
-      try {
-        if (currentUserData) {
+    async function fetchChatHeads() {
+      if (currentUserData && chatHeads.length === 0)
+        try {
           onSnapshot(
             query(
               colRef,
@@ -91,28 +132,30 @@ export const MessageProvider: React.FC<any> = ({
               limit(7)
             ),
             (snap) => {
+              setChatHeads([])
               if (!snap.empty)
                 snap.forEach((document) => {
-                  // console.log(document.id)
-                  checkUserID(document.id)
+                  setChatHeads((p) => [...p, document.id])
+                  fetchChats(document.id, document.data() as ChatInfoTypes)
                 })
             }
           )
+        } catch (err) {
+          console.log(err)
         }
-      } catch (err) {
-        console.log(err)
-      }
     }
     if (isMounted) {
-      fetchChats()
+      fetchChatHeads()
     }
     return () => {
       console.log("Chat heads unmounts")
       isMounted = false
     }
-  }, [checkUserID, colRef, currentUserData])
+  }, [currentUserData])
 
   const value = {
+    chats,
+    chatHeads,
     handleMessage,
   }
 

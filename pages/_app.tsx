@@ -63,7 +63,7 @@ const MainComponent = ({ Component, pageProps }: AppProps) => {
     return () => {
       isMounted = false
     }
-  }, [currentUser, setCurrentUserId])
+  }, [])
 
   return <Component {...pageProps} />
 }

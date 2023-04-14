@@ -8,6 +8,7 @@ import { ChatHeader, ChatModal } from "~/components/Default"
 import MessageModal from "~/components/Default/MessageModal"
 import SideBar from "~/components/Default/Sidebar"
 import { Header } from "~/components/Header"
+import { useMessage } from "~/components/MessageContext"
 import { useUser } from "~/components/UserContext"
 import { db } from "~/utils/firebase"
 import { setContactList } from "~/utils/redux/actions/userActions"
@@ -21,7 +22,8 @@ export default function Home() {
   const { id } = useAppSelector((s) => s.user)
   const { currentUser } = useAuth()
   const { currentUserData, userData, currentUserId } = useUser()
-  console.log({ userData })
+  const { chats } = useMessage()
+  console.log({ chats })
 
   useEffect(() => {
     let isMounted = true
