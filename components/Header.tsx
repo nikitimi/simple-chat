@@ -1,8 +1,8 @@
 import Link from "next/link"
 import { useAppSelector } from "~/utils/redux/hooks"
-import { useAuth } from "./AuthContext"
+import { useAuth } from "~/contexts"
 
-export const Header = ({ blur }: { blur: boolean }) => {
+const Header = ({ blur }: { blur: boolean }) => {
   const { messageModal, chatHeader } = useAppSelector((s) => s.ui)
   const { currentUser } = useAuth()
   const paths = currentUser
@@ -42,3 +42,4 @@ export const Header = ({ blur }: { blur: boolean }) => {
     </header>
   )
 }
+export default Header

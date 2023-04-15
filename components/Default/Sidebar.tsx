@@ -1,43 +1,50 @@
-import {
-  collection,
-  getDocs,
-  onSnapshot,
-  query,
-  where,
-  orderBy,
-  limit,
-} from "firebase/firestore"
 import Image from "next/image"
 import { useEffect, useState } from "react"
-import { chatColName } from "~/pages"
-import { db } from "~/utils/firebase"
 import { toggleModal } from "~/utils/redux/actions/uiActions"
-import { setChatHeads, setChatModal } from "~/utils/redux/actions/userActions"
 import { useAppDispatch, useAppSelector } from "~/utils/redux/hooks"
-import { useAuth } from "../AuthContext"
-import { useMessage } from "../MessageContext"
+import { useMessage } from "../../contexts/MessageContext"
+import type { MessageInterface, UserMessageHeader } from "../types"
 
 const SideBar = ({ blur }: { blur: boolean }) => {
+  const DIMENSION = 80
   const dispatch = useAppDispatch()
   const { messageModal, chatHeader } = useAppSelector((s) => s.ui)
-  const { chats, chatHeads, chatHead, selectChatHead } = useMessage()
+  const { chats, chatHeads, selectChatHead } = useMessage()
+  const [chatHeadState, setChatHeadState] = useState<MessageInterface[]>([])
 
   const handleClick =
     (chatHead: string) => (e: React.MouseEvent<HTMLButtonElement>) => {
       e.preventDefault()
-      const style = "bg-blue-300"
-      const altStyle = "even:bg-slate-100"
+      const baseStyle = "p-3 shadow-sm flex"
+      const activeStyle = `bg-blue-300 ${baseStyle}`
+      const inactiveStyle = `even:bg-slate-100 bg-slate-50 ${baseStyle}`
       const currentButton = e.currentTarget
       const buttons = currentButton.parentElement?.querySelectorAll("button")
       buttons?.forEach((button) => {
-        button.classList.add("even:bg-slate-100")
-        button.classList.remove(style)
+        button.removeAttribute("class")
+        button.setAttribute("class", inactiveStyle)
       })
-      currentButton.classList.toggle(altStyle)
-      currentButton.classList.add(style)
+      currentButton.removeAttribute("class")
+      currentButton.setAttribute("class", activeStyle)
       selectChatHead(chatHead)
     }
 
+  useEffect(() => {
+    let isMounted = true
+    if (chatHeads) {
+      let placeHolderArr: MessageInterface[] = []
+      chatHeads.forEach((v) => {
+        const chatFiltered = chats.filter((obj) => Object.keys(obj)[0] === v)[0]
+        if (chatFiltered) placeHolderArr.push(Object.values(chatFiltered)[0][0])
+      })
+      setChatHeadState(placeHolderArr)
+    }
+    return () => {
+      console.log("Unmounting Active CHats")
+      isMounted = false
+    }
+    //eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chats])
   return (
     <section
       className={`${
@@ -54,49 +61,60 @@ const SideBar = ({ blur }: { blur: boolean }) => {
         +
       </button>
       <div className="grid grid-rows-7">
-        {chatHeads.map((v, i) => {
-          // TODO: need to figure out the Array with 0 length
-          try {
-            const data = chats.filter(
-              (obj) => Object.keys(obj)[0] === chatHeads[i]
-            )[0]
-            const objHolder = data && Object.values(data)[0][0].recipient
-            const displayName = data ? objHolder.displayName : "Foobar"
-            const photoURL = data ? objHolder.photoURL : "/favicon.ico"
-            const DIMENSION = 80
-
-            return (
-              <button
-                key={v}
-                onClick={handleClick(chatHeads[i])}
-                className="bg-slate-50 p-3 shadow-sm flex"
-              >
-                <div className="relative min-w-fit rounded-full overflow-hidden">
-                  <Image
-                    width={DIMENSION}
-                    height={DIMENSION}
-                    className={`${
-                      data ? "bg-transparent" : "bg-slate-200 animate-load"
-                    } transition-colors`}
-                    src={photoURL}
-                    alt="ava-photo"
-                  />
-                </div>
-                <h3
-                  className={`${
-                    data
-                      ? "text-black"
-                      : "text-slate-200 bg-slate-200 animate-load"
-                  } grow font-semibold text-center transition-colors`}
+        {chatHeadState.length > 0 &&
+          chatHeadState.map((value, i) => {
+            const photoURL =
+              chatHeadState.length > 0
+                ? value?.recipient.photoURL
+                : "/favicon.ico"
+            const displayName =
+              chatHeadState.length > 0 ? value?.recipient.displayName : "foobar"
+            const message =
+              chatHeadState.length > 0 && value ? value.message : "foobar"
+            try {
+              return (
+                <button
+                  key={i}
+                  onClick={handleClick(chatHeads[i])}
+                  className="p-3 shadow-sm flex"
                 >
-                  {displayName}
-                </h3>
-              </button>
-            )
-          } catch (err) {
-            console.log(err)
-          }
-        })}
+                  <div className="relative min-w-fit rounded-full overflow-hidden">
+                    <Image
+                      width={DIMENSION}
+                      height={DIMENSION}
+                      className={`${
+                        chatHeadState.length > 0
+                          ? "bg-transparent"
+                          : "bg-slate-200 animate-load"
+                      } transition-colors`}
+                      src={photoURL}
+                      alt=""
+                    />
+                  </div>
+                  <div>
+                    <h3
+                      className={`${
+                        chatHeadState.length > 0
+                          ? "text-black"
+                          : "text-slate-200 bg-slate-200 animate-load"
+                      } font-semibold text-center transition-colors`}
+                    >
+                      {displayName}
+                    </h3>
+                    <p
+                      className={`${
+                        chatHeadState.length > 0
+                          ? "text-slate-400"
+                          : "text-slate-200 bg-slate-200 animate-load"
+                      }`}
+                    >{`${message.substring(0, 4)}...`}</p>
+                  </div>
+                </button>
+              )
+            } catch (err) {
+              console.log(err)
+            }
+          })}
       </div>
       <div className="grid justify-center grid-rows-7 gap-4"></div>
     </section>

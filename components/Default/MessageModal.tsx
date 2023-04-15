@@ -1,11 +1,10 @@
 import React, { useRef, useState } from "react"
 import { toggleModal } from "~/utils/redux/actions/uiActions"
 import { useAppDispatch, useAppSelector } from "~/utils/redux/hooks"
-import { useAuth } from "../AuthContext"
 import { Minimize } from "../Buttons"
-import { useMessage } from "../MessageContext"
+import { useMessage } from "../../contexts/MessageContext"
 import type { ClientMessageTypes, UserMessageHeader } from "../types"
-import { useUser } from "../UserContext"
+import { useUser } from "../../contexts/UserContext"
 
 const initialRecipient = {
   email: "",
@@ -15,7 +14,8 @@ const initialRecipient = {
 }
 
 const MessageModal = () => {
-  const { currentUserData } = useUser()
+  const { currentUserData, currentUserId, promptMessage, handleAddToContacts } =
+    useUser()
   const { handleMessage } = useMessage()
   const dispatch = useAppDispatch()
   const { messageModal, submitContactMessage } = useAppSelector((s) => s.ui)
@@ -27,36 +27,44 @@ const MessageModal = () => {
     const input = divRef.current?.querySelector("input")
     const div = divRef.current?.querySelector("#suggest")
     if (input && div && currentUserData) {
-      const contactList = currentUserData.contacts.filter(({ displayName }) =>
-        displayName.toLowerCase().includes(input.value.toLowerCase())
-      )
-      const buttons = contactList.map(({ displayName, email }, i) => {
-        const button = document.createElement("button")
-        button.setAttribute("key", `${i}`)
-        button.classList.add("bg-blue-400")
-        button.setAttribute("value", email)
-        button.textContent = displayName
-        return button
-      })
-      const parent = document.createElement("div")
-      parent.setAttribute("id", "suggest")
-      parent.setAttribute("class", "flex flex-col overflow-y-auto")
-      parent.append(...buttons)
-      buttons.forEach((button) =>
-        button.addEventListener("click", (e) => {
-          e.preventDefault()
-          dispatch(toggleModal("submitContactMessage", true))
-          setRecipient(() => {
-            const { lastOnline, ...rest } = contactList.filter(
-              ({ email }) => email === button.value
-            )[0]
-            return rest
+      try {
+        console.log(currentUserData.contacts)
+        if (currentUserData.contacts !== undefined) {
+          const contactList = currentUserData.contacts.filter(
+            ({ displayName }) =>
+              displayName.toLowerCase().includes(input.value.toLowerCase())
+          )
+          const buttons = contactList.map(({ displayName, email }, i) => {
+            const button = document.createElement("button")
+            button.setAttribute("key", `${i}`)
+            button.classList.add("bg-blue-400")
+            button.setAttribute("value", email)
+            button.textContent = displayName
+            return button
           })
-          parent.classList.remove("flex")
-          parent.classList.add("hidden")
-        })
-      )
-      div.replaceWith(parent)
+          const parent = document.createElement("div")
+          parent.setAttribute("id", "suggest")
+          parent.setAttribute("class", "flex flex-col overflow-y-auto")
+          parent.append(...buttons)
+          buttons.forEach((button) =>
+            button.addEventListener("click", (e) => {
+              e.preventDefault()
+              dispatch(toggleModal("submitContactMessage", true))
+              setRecipient(() => {
+                const { lastOnline, ...rest } = contactList.filter(
+                  ({ email }) => email === button.value
+                )[0]
+                return rest
+              })
+              parent.classList.remove("flex")
+              parent.classList.add("hidden")
+            })
+          )
+          div.replaceWith(parent)
+        } else if (currentUserId) handleAddToContacts(currentUserId)
+      } catch (err) {
+        console.log("No contacts exists!", err)
+      }
     }
     dispatch(toggleModal("submitContactMessage", false))
     setRecipient((p) => ({ ...p, displayName: e.target.value }))

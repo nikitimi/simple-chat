@@ -50,6 +50,7 @@ export type ClientMessageTypes = {
 }
 export interface MessageInterface extends ClientMessageTypes {
   sender: UserMessageHeader
+  type: string
 }
 
 export type ChatIDDataTypes = {

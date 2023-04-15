@@ -2,17 +2,23 @@ import {
   addDoc,
   collection,
   doc,
+  DocumentData,
+  getDoc,
   getDocs,
+  increment,
   limit,
   onSnapshot,
   orderBy,
   query,
+  QuerySnapshot,
   runTransaction,
+  updateDoc,
   where,
 } from "firebase/firestore"
 import { createContext, useContext, useEffect, useState } from "react"
-import { db } from "~/utils/firebase"
-import { ClientMessageTypes, MessageInterface } from "./types"
+import { chatsCollectionRef, db } from "~/utils/firebase"
+import { ClientMessageTypes, MessageInterface } from "../components/types"
+import { useAuth } from "./AuthContext"
 import { useUser } from "./UserContext"
 
 type ChatInfoTypes = {
@@ -45,23 +51,41 @@ export const MessageProvider: React.FC<any> = ({
 }: {
   children: React.ReactNode
 }) => {
-  const { currentUserId, currentUserData } = useUser()
-  const colRef = collection(db, "chats")
+  const { currentUserId } = useUser()
+  const { currentUser } = useAuth()
   const [chats, setChats] = useState<ChatsInterface[]>([])
   const [chatHeads, setChatHeads] = useState<string[]>([])
   const [chatHead, setChatHeadHook] = useState<string>("")
-  const selectChatHead = (value: string) => setChatHeadHook(value)
+  // const [noChatDocExist, ChatDocExist] = useState(true)
+
+  function selectChatHead(value: string) {
+    setChatHeadHook(value)
+  }
+
+  function resetMessageData() {
+    setChats([])
+    setChatHeads([])
+    setChatHeadHook("")
+    // ChatDocExist(true)
+  }
+
+  useEffect(() => resetMessageData, [currentUser])
 
   async function handleMessage(data: ClientMessageTypes) {
-    if (currentUserData) {
+    if (currentUser) {
       const { recipient } = data
-      const { email, emailVerified, photoURL, displayName } = currentUserData
+      const { email, emailVerified, photoURL, displayName } = currentUser
       const modifiedData: MessageInterface = {
-        sender: { email, emailVerified, photoURL, displayName },
+        sender: {
+          email: `${email}`,
+          emailVerified,
+          photoURL: `${photoURL}`,
+          displayName: `${displayName}`,
+        },
+        type: "text",
         ...data,
       }
       const date = new Date()
-
       const recipientQuery = query(
         collection(db, "users"),
         where("email", "==", recipient.email)
@@ -70,60 +94,41 @@ export const MessageProvider: React.FC<any> = ({
       if (docs.length > 0) {
         const recipientId = docs[0].id
         const messageId = `${recipientId}${currentUserId}`
-
-        await runTransaction(db, async (tsx) => {
-          const { docs } = await getDocs(
-            query(colRef, where("messageId", "==", messageId))
-          )
-          if (docs.length > 0) {
-            tsx.update(doc(db, `/chats/${docs[0].id}`), {
-              updatedAt: date.getTime(),
-            })
-            await addDoc(
-              collection(db, `/chats/${docs[0].id}/history`),
-              modifiedData
-            )
-          } else {
-            const { id } = await addDoc(colRef, {
-              participants: [recipient.email, email],
-              updatedAt: date.getTime(),
-              messageId,
-            })
-            await addDoc(collection(db, `/chats/${id}/history`), modifiedData)
-          }
-        })
+        const docRef = doc(chatsCollectionRef, messageId)
+        const timeUpdate = {
+          updatedAt: date.getTime(),
+        }
+        const codument = await getDoc(docRef)
+        console.log(codument.exists())
       }
     }
   }
 
   async function fetchChats(chatId: string, data: ChatInfoTypes) {
     try {
-      if (currentUserData) {
+      if (currentUser) {
         const recipient = data.participants.filter(
-          (v) => !v.includes(currentUserData.email)
+          (v) => !v.includes(`${currentUser.email}`)
         )[0]
         const chatQuery = query(
           collection(db, `/chats/${chatId}/history`),
-          where(
-            "recipient.email",
-            "==",
-            recipient ? recipient : currentUserData.email
-          ),
+          where("type", "==", "text"),
           orderBy("sentTime", "desc"),
           limit(8)
         )
         const snap = await getDocs(chatQuery)
-        // let objArr = []
+        console.log(recipient, currentUser.email)
         let array: MessageInterface[] = []
         snap.forEach((doc) => {
           array.push({ ...(doc.data() as MessageInterface) })
         })
-        // objArr.push({ [chatId]: array.reverse() })
         setChats((p) => {
-          let x = [...p, { [chatId]: array.reverse() }]
-          const index = x.findIndex((obj) => Object.keys(obj)[0] === chatId)
-          x[index] = { [chatId]: array }
-          return x
+          let prevState = [...p, { [chatId]: array }]
+          const index = prevState.findIndex(
+            (obj) => Object.keys(obj)[0] === chatId
+          )
+          prevState[index] = { [chatId]: array }
+          return prevState
         })
       }
     } catch (err) {
@@ -134,25 +139,24 @@ export const MessageProvider: React.FC<any> = ({
   useEffect(() => {
     let isMounted = true
     async function fetchChatHeads() {
-      if (currentUserData && chatHeads.length === 0)
+      if (currentUser && chatHeads.length === 0)
         try {
           onSnapshot(
             query(
-              colRef,
-              where("participants", "array-contains-any", [
-                currentUserData.email,
-              ]),
+              chatsCollectionRef,
+              where("participants", "array-contains-any", [currentUser.email]),
               orderBy("updatedAt", "desc"),
               limit(7)
             ),
             (snap) => {
               if (!snap.empty) {
-                let array: string[] = []
+                let chatHeadsArray: string[] = []
                 snap.forEach((document) => {
-                  array.push(document.id)
+                  chatHeadsArray.push(document.id)
                   fetchChats(document.id, document.data() as ChatInfoTypes)
                 })
-                setChatHeads(array)
+                console.log(`Setting array at chat Heads: ${chatHeadsArray}`)
+                setChatHeads(chatHeadsArray)
               }
             }
           )
@@ -167,7 +171,7 @@ export const MessageProvider: React.FC<any> = ({
       console.log("Chat heads unmounts")
       isMounted = false
     }
-  }, [currentUserData])
+  }, [currentUser])
 
   const value = {
     chats,

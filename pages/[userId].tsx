@@ -1,73 +1,46 @@
-import { arrayUnion, doc, runTransaction } from "firebase/firestore"
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/router"
 import React, { useEffect, useState } from "react"
-import { Loading } from "~/components"
-import { useAuth } from "~/components/AuthContext"
-import Center from "~/components/Center"
+import { Loading, Center } from "~/components"
 import MessageModal from "~/components/Default/MessageModal"
-import { UserDataInterface, UserDataTypes } from "~/components/types"
-import { useUser } from "~/components/UserContext"
-
-import { db } from "~/utils/firebase"
-import { useAppSelector } from "~/utils/redux/hooks"
+import { useUser } from "~/contexts"
 
 const UserID = () => {
   const { query, push } = useRouter()
-  const { currentUser } = useAuth()
-  const { userData, checkUserID } = useUser()
-  const [message, setMessage] = useState<string | null>(null)
+  const {
+    userData,
+    checkUserID,
+    currentUserId,
+    handleAddToContacts,
+    promptMessage,
+  } = useUser()
   const [modal, toggleModal] = useState(false)
-  const { id } = useAppSelector((s) => s.user)
   const userId = typeof query.userId === "string" ? query.userId : ""
-  const isProfileTheUser = id === userId
+  const isProfileTheUser = currentUserId === userId
   const addContactBtnStyle = "add-contacts-button" // button-style-name-init
   const disContactBtnStyle = "add-contacts-button-disabled" // button-style-name-init
 
-  const handleAddToContact =
-    (uid: string) => async (e: React.MouseEvent<HTMLButtonElement>) => {
-      const button: HTMLButtonElement = e.currentTarget
-      const currentUserRef = doc(db, `/users/${id}`)
-      // button-style
-      button.setAttribute("disabled", "true")
-      button.classList.add(disContactBtnStyle)
-      button.classList.remove(addContactBtnStyle)
+  const contactButton = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    // button-style
+    const button: HTMLButtonElement = e.currentTarget
+    button.setAttribute("disabled", "true")
+    button.classList.add(disContactBtnStyle)
+    button.classList.remove(addContactBtnStyle)
 
-      if (!currentUser) return setMessage("You need to sign in first")
-      if (isProfileTheUser)
-        return setMessage("You're this user.. Badum, awkward")
-
-      if (message === null)
-        await runTransaction(db, async (tsx) => {
-          console.log("transaction runs")
-          const currentUserDoc = await tsx.get(currentUserRef)
-          const { contacts } = currentUserDoc.data() as UserDataInterface
-          const userViewData = userData.filter(
-            ({ userId }) => userId === uid
-          )[0]
-          const isUserExistInContactList =
-            contacts.filter(({ email }) => email === userViewData.email)
-              .length !== 0
-          const mapUserViewData = () => {
-            const { contacts, userId, ...rest } = userViewData
-            return { ...rest }
-          }
-          if (isUserExistInContactList)
-            return setMessage(`You've already added this user`)
-          tsx.update(currentUserRef, {
-            contacts: arrayUnion(mapUserViewData()),
-          })
-          // button-style
-          button.classList.add(addContactBtnStyle)
-          button.classList.remove(disContactBtnStyle)
-          button.removeAttribute("disabled")
-        })
-    }
+    await handleAddToContacts(userId)
+    // button-style
+    button.classList.add(addContactBtnStyle)
+    button.classList.remove(disContactBtnStyle)
+    button.removeAttribute("disabled")
+  }
 
   useEffect(() => {
     let isMounted = true
-    if (isMounted) checkUserID(userId)
+    if (isMounted) {
+      console.log(`Checking User Ids`)
+      checkUserID(userId)
+    }
     return () => {
       isMounted = false
     }
@@ -99,7 +72,7 @@ const UserID = () => {
         <h3>{displayName}</h3>
         <button
           className={isProfileTheUser ? "hidden" : addContactBtnStyle}
-          onClick={handleAddToContact(userId)}
+          onClick={contactButton}
           disabled={isProfileTheUser}
         >
           Add to Contact
@@ -112,10 +85,10 @@ const UserID = () => {
         </button>
         <p
           className={`${
-            message ? "opacity-100" : "opacity-0"
+            promptMessage === "" ? "opacity-0" : "opacity-100"
           } prompt bg-yellow-200`}
         >
-          {message}
+          {promptMessage}
         </p>
         {modal && <MessageModal />}
       </Center>

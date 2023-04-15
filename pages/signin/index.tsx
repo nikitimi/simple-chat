@@ -1,7 +1,7 @@
 import React from "react"
 import Link from "next/link"
 import { useRouter } from "next/router"
-import { useAuth } from "~/components/AuthContext"
+import { useAuth } from "~/contexts"
 import { Loading } from "~/components"
 import Center from "~/components/Center"
 

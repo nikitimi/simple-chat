@@ -1,26 +1,25 @@
 import { doc, onSnapshot } from "firebase/firestore"
 import Link from "next/link"
 import { useEffect } from "react"
-import { Main } from "~/components"
-import { useAuth } from "~/components/AuthContext"
-import Center from "~/components/Center"
-import { ChatHeader, ChatModal } from "~/components/Default"
-import MessageModal from "~/components/Default/MessageModal"
-import SideBar from "~/components/Default/Sidebar"
-import { Header } from "~/components/Header"
-import { useMessage } from "~/components/MessageContext"
-import { useUser } from "~/components/UserContext"
+import { Center, Header, Main } from "~/components"
+import {
+  ChatHeader,
+  ChatModal,
+  MessageModal,
+  Sidebar,
+} from "~/components/Default"
+import { useAuth, useMessage } from "~/contexts"
 import { db } from "~/utils/firebase"
 import { setContactList } from "~/utils/redux/actions/userActions"
 import { useAppDispatch, useAppSelector } from "~/utils/redux/hooks"
-
-export const chatColName = "chats"
 
 export default function Home() {
   const dispatch = useAppDispatch()
   const { messageModal, chatHeader } = useAppSelector((s) => s.ui)
   const { id } = useAppSelector((s) => s.user)
   const { currentUser } = useAuth()
+  const { chats } = useMessage()
+  console.log(chats)
 
   useEffect(() => {
     let isMounted = true
@@ -30,13 +29,12 @@ export default function Home() {
           const contacts = document.data()?.contacts
             ? document.data()?.contacts
             : []
-          // console.log("contact_lists", id)
+          console.log(`Setting up Contact List: ${contacts}`)
           dispatch(setContactList(contacts))
         })
       }
     }
     if (isMounted) {
-      // console.log("CurrentUser data mounted!")
       fetchCurrentUserData()
     }
     return () => {
@@ -51,7 +49,7 @@ export default function Home() {
       {currentUser && <MessageModal />}
       {currentUser ? (
         <div className="flex">
-          <SideBar blur={messageModal || chatHeader} />
+          <Sidebar blur={messageModal || chatHeader} />
           <ChatModal blur={messageModal || chatHeader} />
         </div>
       ) : (

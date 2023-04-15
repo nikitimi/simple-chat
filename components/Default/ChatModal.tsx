@@ -14,42 +14,58 @@ import {
   deleteDoc,
   DocumentSnapshot,
   DocumentReference,
+  writeBatch,
+  getDocs,
 } from "firebase/firestore"
 import Image from "next/image"
 import { useState, useEffect } from "react"
 import { chatColName } from "~/pages"
-import { db } from "~/utils/firebase"
+import { chatsCollectionRef, db } from "~/utils/firebase"
 import { toggleModal } from "~/utils/redux/actions/uiActions"
 import { setChatHeads } from "~/utils/redux/actions/userActions"
 import { useAppSelector, useAppDispatch } from "~/utils/redux/hooks"
-import { useAuth } from "../AuthContext"
+import { useAuth } from "../../contexts/AuthContext"
 import { Minimize } from "../Buttons"
-import { useMessage } from "../MessageContext"
-import type { ChatIDDataTypes, MessageInterface } from "../types"
-
-interface ChatTypes extends ChatIDDataTypes {
-  history?: MessageInterface[]
-}
+import { useMessage } from "../../contexts/MessageContext"
+import { MessageInterface } from "../types"
 
 const ChatModal = ({ blur }: { blur: boolean }) => {
+  const DIMENSION = 80
   const { currentUser } = useAuth()
   const { chatHead, chats, handleMessage } = useMessage()
   const dispatch = useAppDispatch()
-  const { messageModal, chatHeader, chatModal } = useAppSelector((s) => s.ui)
+  const { messageModal, chatHeader } = useAppSelector((s) => s.ui)
   const [message, setMessage] = useState("")
-  const userActiveChats = chats.filter(
+  const userActiveChatObj = chats.filter(
     (obj) => Object.keys(obj)[0] === chatHead
   )[0]
+  const [userActiveChats, setActiveChats] = useState<MessageInterface[] | null>(
+    null
+  )
 
-  const userActiveData = userActiveChats
-    ? Object.values(userActiveChats)[0][0].recipient
-    : null
   const messageData = {
-    recipient: userActiveData,
+    recipient: userActiveChats
+      ? userActiveChats[0].recipient
+      : {
+          displayName: "foobar",
+          email: "foobar",
+          emailVerified: false,
+          photoURL: "/favicon.ico",
+        },
     sentTime: new Date().getTime(),
     message,
   }
-  const DIMENSION = 80
+
+  useEffect(() => {
+    let isMounted = true
+    if (userActiveChatObj) {
+      setActiveChats(Object.values(userActiveChatObj)[0])
+    }
+    return () => {
+      console.log("Unmounting Active CHats")
+      isMounted = false
+    }
+  }, [userActiveChatObj])
 
   return (
     <div
@@ -57,10 +73,10 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
         blur ? "custom-blur" : ""
       } w-full min-h-1/2 max-h-screen bg-slate-50 duration-300 ease`}
     >
-      {userActiveData && (
+      {userActiveChats && (
         <div className="relative h-fit text-center py-2 px-1">
           <button
-            className="absolute inset-x-0 bg-slate-200"
+            className="bg-slate-200 w-full"
             disabled={messageModal || chatHeader}
             onClick={() => dispatch(toggleModal("chatHeader"))}
           >
@@ -68,38 +84,36 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
               <Image
                 width={DIMENSION}
                 height={DIMENSION}
-                src={userActiveData.photoURL}
+                src={userActiveChats[0].recipient.photoURL}
                 alt="ava-photo"
               />
             </div>
-            <h1>{userActiveData.displayName}</h1>
+            <h1>{userActiveChats[0].recipient.displayName}</h1>
           </button>
         </div>
       )}
-      <div className="flex flex-col h-min overflow-y-scroll">
+      <div className="flex flex-col-reverse h-min overflow-y-scroll">
         {userActiveChats &&
-          Object.values(userActiveChats)[0].map(
-            ({ message, sentTime, sender }, i) => {
-              const sentT = new Date()
-              sentT.setTime(sentTime)
-              const time = `${sentT.getHours()}:${sentT.getMinutes()}`
-              return (
-                <div
-                  key={i}
-                  className={`${
-                    sender.email === currentUser?.email
-                      ? "bg-blue-400 text-white ml-auto"
-                      : "bg-slate-200 text-black mr-auto"
-                  } w-min rounded-md px-4 py-2 m-2 `}
-                >
-                  <p>{message}</p>
-                  <p>{time}</p>
-                </div>
-              )
-            }
-          )}
+          userActiveChats.map(({ message, sentTime, sender }, i) => {
+            const sentT = new Date()
+            sentT.setTime(sentTime)
+            const time = `${sentT.getHours()}:${sentT.getMinutes()}`
+            return (
+              <div
+                key={i}
+                className={`${
+                  sender.email === currentUser?.email
+                    ? "bg-blue-400 text-white ml-auto"
+                    : "bg-slate-200 text-black mr-auto"
+                } w-min rounded-md px-4 py-2 m-2 `}
+              >
+                <p>{message}</p>
+                <p>{time}</p>
+              </div>
+            )
+          })}
       </div>
-      {userActiveData && (
+      {userActiveChats && (
         <div className="fixed bottom-2 w-2/3 right-4">
           <form>
             <textarea
@@ -145,6 +159,7 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
             } rounded-md fixed z-10 right-6 bottom-10 px-2 py-1 `}
             onClick={() => {
               const { recipient, ...rest } = messageData
+              setActiveChats(Object.values(userActiveChatObj)[0])
               handleMessage({
                 recipient: recipient
                   ? recipient
@@ -180,7 +195,17 @@ const ChatHeader = () => {
       <h1>ChatHeader</h1>
       <Minimize
         name="Delete Chat"
-        onClick={() => deleteDoc(doc(db, `/chats/${chatHead}`))}
+        onClick={async () => {
+          const batch = writeBatch(db)
+          const chatIdRef = doc(chatsCollectionRef, `${chatHead}`)
+          const historyColRef = collection(chatIdRef, `history`)
+          const snap = await getDocs(historyColRef)
+          snap.forEach((document) =>
+            batch.delete(doc(historyColRef, document.id))
+          )
+          batch.delete(chatIdRef)
+          batch.commit()
+        }}
       />
     </div>
   ) : (

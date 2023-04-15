@@ -1,20 +1,24 @@
-import "~/styles/globals.css"
-import type { AppProps } from "next/app"
-import { AuthProvider, useAuth } from "~/components/AuthContext"
-import { useEffect } from "react"
 import {
   collection,
+  doc,
   getDocs,
   query,
-  where,
   updateDoc,
-  doc,
+  where,
 } from "firebase/firestore"
-import { db } from "~/utils/firebase"
+import type { AppProps } from "next/app"
+import { useEffect } from "react"
 import { Provider } from "react-redux"
+import {
+  AuthProvider,
+  MessageProvider,
+  useAuth,
+  UserProvider,
+  useUser,
+} from "~/contexts"
+import "~/styles/globals.css"
+import { db } from "~/utils/firebase"
 import store from "~/utils/redux/store"
-import { UserProvider, useUser } from "~/components/UserContext"
-import { MessageProvider } from "~/components/MessageContext"
 export { reportWebVitals } from "next-axiom"
 
 export default function App({ ...rest }: AppProps) {
@@ -51,18 +55,21 @@ const MainComponent = ({ Component, pageProps }: AppProps) => {
             lastOnline: new Date().getTime(),
           })
           setCurrentUserId(docId)
+          console.log(`Fetching Id: ${docId}!`)
         }
       } catch (err) {
         console.log(err)
       }
     }
     if (isMounted) {
-      console.log("Fetching current id!")
       fetchCurrentUserData()
     }
     return () => {
       isMounted = false
     }
+    /* TODO: currentUser?.email and setCurrentUserId
+    react-hooks/exhaustive-deps */
+    //eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return <Component {...pageProps} />
