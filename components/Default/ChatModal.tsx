@@ -1,28 +1,8 @@
-import {
-  doc,
-  collection,
-  getDoc,
-  runTransaction,
-  addDoc,
-  onSnapshot,
-  query,
-  where,
-  orderBy,
-  limit,
-  QueryDocumentSnapshot,
-  DocumentData,
-  deleteDoc,
-  DocumentSnapshot,
-  DocumentReference,
-  writeBatch,
-  getDocs,
-} from "firebase/firestore"
+import { doc, collection, writeBatch, getDocs } from "firebase/firestore"
 import Image from "next/image"
 import { useState, useEffect } from "react"
-import { chatColName } from "~/pages"
 import { chatsCollectionRef, db } from "~/utils/firebase"
 import { toggleModal } from "~/utils/redux/actions/uiActions"
-import { setChatHeads } from "~/utils/redux/actions/userActions"
 import { useAppSelector, useAppDispatch } from "~/utils/redux/hooks"
 import { useAuth } from "../../contexts/AuthContext"
 import { Minimize } from "../Buttons"
@@ -32,13 +12,10 @@ import { MessageInterface } from "../types"
 const ChatModal = ({ blur }: { blur: boolean }) => {
   const DIMENSION = 80
   const { currentUser } = useAuth()
-  const { chatHead, chats, handleMessage } = useMessage()
+  const { chatHead, chatHeads, chats, handleMessage } = useMessage()
   const dispatch = useAppDispatch()
   const { messageModal, chatHeader } = useAppSelector((s) => s.ui)
   const [message, setMessage] = useState("")
-  const userActiveChatObj = chats.filter(
-    (obj) => Object.keys(obj)[0] === chatHead
-  )[0]
   const [userActiveChats, setActiveChats] = useState<MessageInterface[] | null>(
     null
   )
@@ -58,14 +35,15 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
 
   useEffect(() => {
     let isMounted = true
-    if (userActiveChatObj) {
-      setActiveChats(Object.values(userActiveChatObj)[0])
+    if (isMounted) {
+      const chatData = chats.filter(({ chatId }) => chatId === chatHead)[0]
+      if (chatData) setActiveChats(chatData.data)
     }
     return () => {
       console.log("Unmounting Active CHats")
       isMounted = false
     }
-  }, [userActiveChatObj])
+  }, [chatHead, chats, chatHeads])
 
   return (
     <div
@@ -159,7 +137,6 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
             } rounded-md fixed z-10 right-6 bottom-10 px-2 py-1 `}
             onClick={() => {
               const { recipient, ...rest } = messageData
-              setActiveChats(Object.values(userActiveChatObj)[0])
               handleMessage({
                 recipient: recipient
                   ? recipient

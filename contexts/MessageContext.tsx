@@ -1,8 +1,10 @@
 import {
   addDoc,
+  and,
   collection,
   doc,
   DocumentData,
+  documentId,
   getDoc,
   getDocs,
   increment,
@@ -12,6 +14,7 @@ import {
   query,
   QuerySnapshot,
   runTransaction,
+  setDoc,
   updateDoc,
   where,
 } from "firebase/firestore"
@@ -26,8 +29,9 @@ type ChatInfoTypes = {
   participants: string[]
   updatedAt: number
 }
-interface ChatsInterface {
-  [x: string]: MessageInterface[]
+export interface ChatsInterface {
+  data: MessageInterface[]
+  chatId: string
 }
 type MessageContextTypes = {
   chats: ChatsInterface[]
@@ -56,7 +60,6 @@ export const MessageProvider: React.FC<any> = ({
   const [chats, setChats] = useState<ChatsInterface[]>([])
   const [chatHeads, setChatHeads] = useState<string[]>([])
   const [chatHead, setChatHeadHook] = useState<string>("")
-  // const [noChatDocExist, ChatDocExist] = useState(true)
 
   function selectChatHead(value: string) {
     setChatHeadHook(value)
@@ -66,10 +69,55 @@ export const MessageProvider: React.FC<any> = ({
     setChats([])
     setChatHeads([])
     setChatHeadHook("")
-    // ChatDocExist(true)
   }
 
-  useEffect(() => resetMessageData, [currentUser])
+  useEffect(() => {
+    let isMounted = true
+    async function fetchChatHeads() {
+      if (currentUser && chatHeads.length === 0)
+        try {
+          onSnapshot(
+            query(
+              chatsCollectionRef,
+              where("participants", "array-contains", currentUser.email),
+              orderBy("updatedAt", "desc"),
+              limit(7)
+            ),
+            (snap) => {
+              if (!snap.empty) {
+                let chatHeadsArray: string[] = []
+                snap.forEach((document) => {
+                  chatHeadsArray.push(document.id)
+                  fetchChats(document.id, document.data() as ChatInfoTypes)
+                })
+                console.log(`Setting array at chat Heads: ${chatHeadsArray}`)
+                setChatHeads(chatHeadsArray)
+              }
+            }
+          )
+        } catch (err) {
+          console.log(err)
+        }
+    }
+    if (isMounted) {
+      resetMessageData()
+      fetchChatHeads()
+    }
+    return () => {
+      console.log("Chat heads unmounts")
+      isMounted = false
+    }
+  }, [currentUser])
+
+  async function chatDocQuery(participants: string[]) {
+    const chatDocumentQuery = query(
+      chatsCollectionRef,
+      where("participants", "==", participants),
+      orderBy("updatedAt", "desc"),
+      limit(5)
+    )
+    return await getDocs(chatDocumentQuery)
+  }
 
   async function handleMessage(data: ClientMessageTypes) {
     if (currentUser) {
@@ -94,12 +142,32 @@ export const MessageProvider: React.FC<any> = ({
       if (docs.length > 0) {
         const recipientId = docs[0].id
         const messageId = `${recipientId}${currentUserId}`
-        const docRef = doc(chatsCollectionRef, messageId)
-        const timeUpdate = {
-          updatedAt: date.getTime(),
+        const snap = await chatDocQuery([
+          recipient.email,
+          `${currentUser.email}`,
+        ])
+        if (!snap.empty) console.log(snap.docs[0].id)
+        if (snap.empty) {
+          const addChatDocument = await addDoc(chatsCollectionRef, {
+            participants: [recipient.email, currentUser.email],
+            messageId,
+            updatedAt: date.getTime(),
+          })
+          const historyColRef = collection(
+            doc(chatsCollectionRef, addChatDocument.id),
+            "history"
+          )
+          await addDoc(historyColRef, modifiedData)
+        } else {
+          await updateDoc(doc(chatsCollectionRef, snap.docs[0].id), {
+            updatedAt: date.getTime(),
+          })
+          const historyColRef = collection(
+            doc(chatsCollectionRef, snap.docs[0].id),
+            "history"
+          )
+          await addDoc(historyColRef, modifiedData)
         }
-        const codument = await getDoc(docRef)
-        console.log(codument.exists())
       }
     }
   }
@@ -107,71 +175,37 @@ export const MessageProvider: React.FC<any> = ({
   async function fetchChats(chatId: string, data: ChatInfoTypes) {
     try {
       if (currentUser) {
-        const recipient = data.participants.filter(
-          (v) => !v.includes(`${currentUser.email}`)
-        )[0]
-        const chatQuery = query(
-          collection(db, `/chats/${chatId}/history`),
-          where("type", "==", "text"),
-          orderBy("sentTime", "desc"),
-          limit(8)
-        )
-        const snap = await getDocs(chatQuery)
-        console.log(recipient, currentUser.email)
-        let array: MessageInterface[] = []
-        snap.forEach((doc) => {
-          array.push({ ...(doc.data() as MessageInterface) })
-        })
-        setChats((p) => {
-          let prevState = [...p, { [chatId]: array }]
-          const index = prevState.findIndex(
-            (obj) => Object.keys(obj)[0] === chatId
+        const participants = data.participants
+
+        const snap = await chatDocQuery(participants)
+        if (!snap.empty) {
+          const historyQuery = query(
+            collection(doc(chatsCollectionRef, snap.docs[0].id), "history"),
+            orderBy("sentTime", "desc"),
+            limit(10)
           )
-          prevState[index] = { [chatId]: array }
-          return prevState
-        })
+          let array: MessageInterface[] = []
+          onSnapshot(historyQuery, (historySnap) => {
+            historySnap.forEach((chatDocument) => {
+              console.log({ mes: chatDocument.data().message })
+              array.push({ ...(chatDocument.data() as MessageInterface) })
+            })
+            setChats((p) => {
+              //TODO: fix Push error seen in ChatModal.tsx
+              let placeholder = [{ data: array, chatId }]
+              const ind = placeholder.findIndex(
+                ({ chatId }) => chatId === chatId
+              )
+              placeholder[ind] = { data: array, chatId }
+              return placeholder
+            })
+          })
+        }
       }
     } catch (err) {
       console.log(err)
     }
   }
-
-  useEffect(() => {
-    let isMounted = true
-    async function fetchChatHeads() {
-      if (currentUser && chatHeads.length === 0)
-        try {
-          onSnapshot(
-            query(
-              chatsCollectionRef,
-              where("participants", "array-contains-any", [currentUser.email]),
-              orderBy("updatedAt", "desc"),
-              limit(7)
-            ),
-            (snap) => {
-              if (!snap.empty) {
-                let chatHeadsArray: string[] = []
-                snap.forEach((document) => {
-                  chatHeadsArray.push(document.id)
-                  fetchChats(document.id, document.data() as ChatInfoTypes)
-                })
-                console.log(`Setting array at chat Heads: ${chatHeadsArray}`)
-                setChatHeads(chatHeadsArray)
-              }
-            }
-          )
-        } catch (err) {
-          console.log(err)
-        }
-    }
-    if (isMounted) {
-      fetchChatHeads()
-    }
-    return () => {
-      console.log("Chat heads unmounts")
-      isMounted = false
-    }
-  }, [currentUser])
 
   const value = {
     chats,

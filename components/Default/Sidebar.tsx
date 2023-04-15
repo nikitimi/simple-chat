@@ -9,7 +9,7 @@ const SideBar = ({ blur }: { blur: boolean }) => {
   const DIMENSION = 80
   const dispatch = useAppDispatch()
   const { messageModal, chatHeader } = useAppSelector((s) => s.ui)
-  const { chats, chatHeads, selectChatHead } = useMessage()
+  const { chats, chatHead, chatHeads, selectChatHead } = useMessage()
   const [chatHeadState, setChatHeadState] = useState<MessageInterface[]>([])
 
   const handleClick =
@@ -31,20 +31,19 @@ const SideBar = ({ blur }: { blur: boolean }) => {
 
   useEffect(() => {
     let isMounted = true
-    if (chatHeads) {
-      let placeHolderArr: MessageInterface[] = []
+    if (isMounted) {
       chatHeads.forEach((v) => {
-        const chatFiltered = chats.filter((obj) => Object.keys(obj)[0] === v)[0]
-        if (chatFiltered) placeHolderArr.push(Object.values(chatFiltered)[0][0])
+        const chatData = chats.filter(({ chatId }) => chatId === v)[0]
+        if (chatData) setChatHeadState((p) => [...p, chatData.data[0]])
       })
-      setChatHeadState(placeHolderArr)
     }
     return () => {
       console.log("Unmounting Active CHats")
       isMounted = false
     }
     //eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chats])
+  }, [chats, chatHead])
+
   return (
     <section
       className={`${
@@ -61,60 +60,54 @@ const SideBar = ({ blur }: { blur: boolean }) => {
         +
       </button>
       <div className="grid grid-rows-7">
-        {chatHeadState.length > 0 &&
-          chatHeadState.map((value, i) => {
-            const photoURL =
-              chatHeadState.length > 0
-                ? value?.recipient.photoURL
-                : "/favicon.ico"
-            const displayName =
-              chatHeadState.length > 0 ? value?.recipient.displayName : "foobar"
-            const message =
-              chatHeadState.length > 0 && value ? value.message : "foobar"
-            try {
-              return (
-                <button
-                  key={i}
-                  onClick={handleClick(chatHeads[i])}
-                  className="p-3 shadow-sm flex"
-                >
-                  <div className="relative min-w-fit rounded-full overflow-hidden">
-                    <Image
-                      width={DIMENSION}
-                      height={DIMENSION}
-                      className={`${
-                        chatHeadState.length > 0
-                          ? "bg-transparent"
-                          : "bg-slate-200 animate-load"
-                      } transition-colors`}
-                      src={photoURL}
-                      alt=""
-                    />
-                  </div>
-                  <div>
-                    <h3
-                      className={`${
-                        chatHeadState.length > 0
-                          ? "text-black"
-                          : "text-slate-200 bg-slate-200 animate-load"
-                      } font-semibold text-center transition-colors`}
-                    >
-                      {displayName}
-                    </h3>
-                    <p
-                      className={`${
-                        chatHeadState.length > 0
-                          ? "text-slate-400"
-                          : "text-slate-200 bg-slate-200 animate-load"
-                      }`}
-                    >{`${message.substring(0, 4)}...`}</p>
-                  </div>
-                </button>
-              )
-            } catch (err) {
-              console.log(err)
-            }
-          })}
+        {chatHeads.map((value, i) => {
+          const recipient = chatHeadState[i]?.recipient
+          const message = recipient ? chatHeadState[i].message : "foobar"
+          try {
+            return (
+              <button
+                key={i}
+                onClick={handleClick(chatHeads[i])}
+                className="p-3 shadow-sm flex"
+              >
+                <div className="relative min-w-fit rounded-full overflow-hidden">
+                  <Image
+                    priority
+                    width={DIMENSION}
+                    height={DIMENSION}
+                    className={`${
+                      chatHeadState.length > 0
+                        ? "bg-transparent"
+                        : "bg-slate-200 animate-load"
+                    } transition-colors`}
+                    src={recipient ? recipient.photoURL : "/favicon.ico"}
+                    alt=""
+                  />
+                </div>
+                <div>
+                  <h3
+                    className={`${
+                      chatHeadState.length > 0
+                        ? "text-black"
+                        : "text-slate-200 bg-slate-200 animate-load"
+                    } font-semibold text-center transition-colors`}
+                  >
+                    {recipient ? recipient.displayName : "Foobar"}
+                  </h3>
+                  <p
+                    className={`${
+                      chatHeadState.length > 0
+                        ? "text-slate-400"
+                        : "text-slate-200 bg-slate-200 animate-load"
+                    }`}
+                  >{`${message.substring(0, 4)}...`}</p>
+                </div>
+              </button>
+            )
+          } catch (err) {
+            console.log(err)
+          }
+        })}
       </div>
       <div className="grid justify-center grid-rows-7 gap-4"></div>
     </section>

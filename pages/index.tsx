@@ -18,8 +18,6 @@ export default function Home() {
   const { messageModal, chatHeader } = useAppSelector((s) => s.ui)
   const { id } = useAppSelector((s) => s.user)
   const { currentUser } = useAuth()
-  const { chats } = useMessage()
-  console.log(chats)
 
   useEffect(() => {
     let isMounted = true

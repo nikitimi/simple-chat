@@ -28,7 +28,6 @@ const MessageModal = () => {
     const div = divRef.current?.querySelector("#suggest")
     if (input && div && currentUserData) {
       try {
-        console.log(currentUserData.contacts)
         if (currentUserData.contacts !== undefined) {
           const contactList = currentUserData.contacts.filter(
             ({ displayName }) =>
