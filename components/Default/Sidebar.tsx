@@ -6,7 +6,6 @@ import { useMessage } from "../../contexts/MessageContext"
 import type { MessageInterface, UserMessageHeader } from "../types"
 
 const SideBar = ({ blur }: { blur: boolean }) => {
-  const DIMENSION = 80
   const dispatch = useAppDispatch()
   const { messageModal, chatHeader } = useAppSelector((s) => s.ui)
   const { chats, chatHead, chatHeads, selectChatHead } = useMessage()
@@ -32,17 +31,17 @@ const SideBar = ({ blur }: { blur: boolean }) => {
   useEffect(() => {
     let isMounted = true
     if (isMounted) {
+      console.log(chats)
       chatHeads.forEach((v) => {
-        const chatData = chats.filter(({ chatId }) => chatId === v)[0]
-        if (chatData) setChatHeadState((p) => [...p, chatData.data[0]])
+        const chatData = chats[v]
+        if (chatData) setChatHeadState((p) => [...p, chatData[0]])
       })
     }
     return () => {
-      console.log("Unmounting Active CHats")
+      // console.log("Unmounting Active CHats")
       isMounted = false
     }
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chats, chatHead])
+  }, [chats, chatHead, chatHeads])
 
   return (
     <section
@@ -61,6 +60,7 @@ const SideBar = ({ blur }: { blur: boolean }) => {
       </button>
       <div className="grid grid-rows-7">
         {chatHeads.map((value, i) => {
+          const DIMENSION = 80
           const recipient = chatHeadState[i]?.recipient
           const message = recipient ? chatHeadState[i].message : "foobar"
           try {

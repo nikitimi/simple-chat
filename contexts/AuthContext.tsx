@@ -31,11 +31,9 @@ const AuthContext = createContext<AuthContextTypes>({
 })
 
 export const useAuth = () => useContext(AuthContext)
-export const AuthProvider: React.FC<any> = ({
-  children,
-}: {
+export const AuthProvider: React.FC<{
   children: ReactNode
-}) => {
+}> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<Auth["currentUser"]>(null)
   const [loading, setLoading] = useState(true)
 

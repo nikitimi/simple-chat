@@ -38,11 +38,9 @@ const UserContext = createContext<UserContextTypes>({
 })
 
 export const useUser = () => useContext(UserContext)
-export const UserProvider: React.FC<any> = ({
-  children,
-}: {
+export const UserProvider: React.FC<{
   children: React.ReactNode
-}) => {
+}> = ({ children }) => {
   const [userId, setNewId] = useState<string[]>([])
   const [userData, setUserData] = useState<UserDataInterface[]>([])
   const [currentUserId, setCUID] = useState<string | null>(null)

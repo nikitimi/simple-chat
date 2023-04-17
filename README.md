@@ -1,6 +1,7 @@
+# What is this?
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
-## Getting Started
+# Getting Started
 
 Create a Firebase account
 
@@ -13,13 +14,13 @@ production of development.`
 Enable Firestore Database,
 Authentication ~~and Storage~~
 
-### `Set-up Authentication`
+## `Set-up Authentication`
 - Insert your domain in Authentication > Setting > Authorized Domains
 
-### `Handling Queries`
+## `Handling Queries`
 - Create composite index in Firestore Database > Indexes > Add Index
 
-#### Composite Indexes:
+### Composite Indexes:
 
 
 For history collection-group:
@@ -40,9 +41,9 @@ For chat collection:
 
 
 
-### Known Issues:
+## Known Issues:
 
-##### 2023-04-16
+#### 2023-04-16
 - Chats renders previous data before rendering new array
 - Chat heads doesn't update correctly unlike `preview` branch
 - Context providers isn't efficient enough, needs logic reconsideration as some functionality is not working as expected

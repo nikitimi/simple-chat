@@ -8,11 +8,12 @@ import { useAuth } from "../../contexts/AuthContext"
 import { Minimize } from "../Buttons"
 import { useMessage } from "../../contexts/MessageContext"
 import { MessageInterface } from "../types"
+import React from "react"
 
 const ChatModal = ({ blur }: { blur: boolean }) => {
   const DIMENSION = 80
   const { currentUser } = useAuth()
-  const { chatHead, chatHeads, chats, handleMessage } = useMessage()
+  const { chatHead, chats, handleMessage } = useMessage()
   const dispatch = useAppDispatch()
   const { messageModal, chatHeader } = useAppSelector((s) => s.ui)
   const [message, setMessage] = useState("")
@@ -20,30 +21,33 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
     null
   )
 
-  const messageData = {
-    recipient: userActiveChats
-      ? userActiveChats[0].recipient
-      : {
-          displayName: "foobar",
-          email: "foobar",
-          emailVerified: false,
-          photoURL: "/favicon.ico",
-        },
-    sentTime: new Date().getTime(),
-    message,
+  async function handleSendMessageEvents() {
+    const { recipient, ...rest } = {
+      recipient: userActiveChats && userActiveChats[0].recipient,
+      sentTime: new Date().getTime(),
+      message,
+    }
+
+    if (recipient) {
+      handleMessage({
+        recipient: recipient,
+        ...rest,
+      })
+      setMessage("")
+    }
   }
 
   useEffect(() => {
     let isMounted = true
-    if (isMounted) {
-      const chatData = chats.filter(({ chatId }) => chatId === chatHead)[0]
-      if (chatData) setActiveChats(chatData.data)
+    if (isMounted && chatHead) {
+      const chatData = chats[chatHead]
+      if (chatData) setActiveChats(chatData)
     }
     return () => {
-      console.log("Unmounting Active CHats")
+      // console.log("Unmounting active chats")
       isMounted = false
     }
-  }, [chatHead, chats, chatHeads])
+  }, [chatHead, chats])
 
   return (
     <div
@@ -95,34 +99,21 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
         <div className="fixed bottom-2 w-2/3 right-4">
           <form>
             <textarea
+              onKeyDown={(e) => {
+                switch (e.code) {
+                  case "NumpadEnter":
+                  case "Enter":
+                    return handleSendMessageEvents
+                  default:
+                    return
+                }
+              }}
               required
               name="content"
               value={message}
               onChange={(e) => {
                 const text: HTMLTextAreaElement = e.currentTarget
                 setMessage(text.value)
-              }}
-              onKeyDown={async (e) => {
-                if (
-                  e.code === "Enter" ||
-                  e.code === "NumpadEnter" ||
-                  e.code === "Return" ||
-                  e.code === "Done"
-                ) {
-                  e.preventDefault()
-                  const { recipient, ...rest } = messageData
-                  handleMessage({
-                    recipient: recipient
-                      ? recipient
-                      : {
-                          email: "",
-                          emailVerified: false,
-                          photoURL: "/user.png",
-                          displayName: "foobar",
-                        },
-                    ...rest,
-                  })
-                }
               }}
               className="w-full resize-none p-4 rounded-md focus:opacity-100 outline-none border duration-300 ease focus:border-blue-500 hover:opacity-100 opacity-10"
               placeholder="Enter a message..."
@@ -135,21 +126,7 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
                 ? "bg-slate-300 text-slate-400"
                 : "bg-green-400 text-white"
             } rounded-md fixed z-10 right-6 bottom-10 px-2 py-1 `}
-            onClick={() => {
-              const { recipient, ...rest } = messageData
-              handleMessage({
-                recipient: recipient
-                  ? recipient
-                  : {
-                      email: "",
-                      emailVerified: false,
-                      photoURL: "/user.png",
-                      displayName: "foobar",
-                    },
-                ...rest,
-              })
-              setMessage("")
-            }}
+            onClick={() => handleSendMessageEvents}
           >
             Send
           </button>
