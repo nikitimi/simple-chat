@@ -3,13 +3,13 @@ import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/router"
 import { Center, Loading } from "~/components"
-import { useAuth } from "~/contexts"
+import { useAuth, useUser } from "~/contexts"
 import { useAppSelector } from "~/utils/redux/hooks"
 
 const Dashboard = () => {
   const DIMENSION = 80
-  const { id } = useAppSelector((s) => s.user)
   const { currentUser, signout } = useAuth()
+  const { currentUserId } = useUser()
   const { push } = useRouter()
 
   if (!currentUser) push("/")
@@ -42,7 +42,9 @@ const Dashboard = () => {
           onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
             e.preventDefault()
 
-            navigator.clipboard.writeText(`${window.location.host}/${id}`)
+            navigator.clipboard.writeText(
+              `${window.location.host}/${currentUserId}`
+            )
           }}
         >
           Share
