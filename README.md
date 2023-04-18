@@ -5,6 +5,7 @@ Add Me:
 ```
 https://simple-chat-wheat.vercel.app/ogdMqUtY0JZf8dFMVfgo
 ```
+You can share yours by clicking the share button in `Dashboard > Share`
 
 # Getting Started
 
