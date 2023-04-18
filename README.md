@@ -14,12 +14,12 @@ if you're cloning this site here is the steps that you should follow, if not jus
 # Node.js
 
 ## Install Node JS
-- Install Node.js LTS (Here)[https://nodejs.org/dist/v18.16.0/node-v18.16.0-x64.msi]
+- Install Node.js LTS [Here](https://nodejs.org/dist/v18.16.0/node-v18.16.0-x64.msi)
 
 # Git Bash
 
 ## Install Git
-- Install Git (Here)[https://git-scm.com/downloads] choose your operating system.
+- Install Git [Here](https://git-scm.com/downloads) choose your operating system.
 
 ## Clone this repository:
 - In your Command Line Interface execute these command
