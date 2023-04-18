@@ -1,110 +1,102 @@
-import {
-  doc,
-  type DocumentData,
-  getDoc,
-  DocumentSnapshot,
-  arrayUnion,
-  runTransaction,
-} from "firebase/firestore"
-// import Image from "next/image"
+import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/router"
-import React, { MouseEvent, useEffect, useState } from "react"
-import { Loading } from "~/components"
-import { useAuth } from "~/components/AuthContext"
-import Center from "~/components/Center"
-import { db } from "~/utils/firebase"
-import { useAppSelector } from "~/utils/redux/hooks"
-
-type StateTypes = {
-  displayName: string
-  email: string
-  photoUrl: string
-  contacts: string[]
-}
+import React, { useEffect, useState } from "react"
+import { Loading, Center } from "~/components"
+import MessageModal from "~/components/Chat/MessageModal"
+import { useUser } from "~/contexts"
 
 const UserID = () => {
-  const DIMENSION = 32
-  const { push } = useRouter()
-  const { currentUser } = useAuth()
-  const { id } = useAppSelector((s) => s.user)
-  const { query } = useRouter()
-  const [{ displayName, email, contacts, photoUrl }, setState] = useState<
-    StateTypes | DocumentData
-  >({
-    displayName: "",
-    email: "",
-    photoUrl: "",
-    contacts: [],
-  })
-  const userId =
-    typeof query.userId === "string" ? query.userId : `${query.userId}`
+  const { query, push } = useRouter()
+  const {
+    userData,
+    checkUserID,
+    currentUserId,
+    handleAddToContacts,
+    promptMessage,
+  } = useUser()
+  const [modal, toggleModal] = useState(false)
+  const userId = typeof query.userId === "string" ? query.userId : ""
+  const isProfileTheUser = currentUserId === userId
+  const addContactBtnStyle = "add-contacts-button" // button-style-name-init
+  const disContactBtnStyle = "add-contacts-button-disabled" // button-style-name-init
+
+  const contactButton = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    // button-style
+    const button: HTMLButtonElement = e.currentTarget
+    button.setAttribute("disabled", "true")
+    button.classList.add(disContactBtnStyle)
+    button.classList.remove(addContactBtnStyle)
+
+    await handleAddToContacts(userId)
+    // button-style
+    button.classList.add(addContactBtnStyle)
+    button.classList.remove(disContactBtnStyle)
+    button.removeAttribute("disabled")
+  }
 
   useEffect(() => {
-    const fetchUserInfo = async () => {
-      try {
-        const userDoc: DocumentSnapshot<DocumentData> = await getDoc(
-          doc(db, `/users/${userId}`)
-        )
-        if (userDoc.exists()) {
-          const rest: StateTypes | DocumentData = userDoc.data()
-          setState(rest)
-        }
-      } catch (err) {
-        console.log(err)
-      }
+    let isMounted = true
+    if (isMounted) {
+      console.log(`Checking User Ids`)
+      checkUserID(userId)
     }
-    fetchUserInfo()
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    return () => {
+      isMounted = false
+    }
+  }, [checkUserID, userId])
 
+  if (isProfileTheUser) {
+    push("/dashboard")
+    return <></>
+  }
+  if (userData.length > 0) {
+    const { email, displayName, photoURL } = userData.filter(
+      (u) => u.userId === userId
+    )[0]
+
+    return (
+      <Center>
+        <Link href="/" className="underline absolute top-2 left-2">
+          Go back
+        </Link>
+        <div className="rounded-full overflow-hidden w-24 h-24 relative">
+          <Image
+            className="object-contain"
+            src={photoURL}
+            fill
+            alt="user-avatar"
+          />
+        </div>
+        <h1>{email}</h1>
+        <h3>{displayName}</h3>
+        <button
+          className={isProfileTheUser ? "hidden" : addContactBtnStyle}
+          onClick={contactButton}
+          disabled={isProfileTheUser}
+        >
+          Add to Contact
+        </button>
+        <button
+          className="fixed right-0"
+          onClick={() => toggleModal((p) => !p)}
+        >
+          Message
+        </button>
+        <p
+          className={`${
+            promptMessage === "" ? "opacity-0" : "opacity-100"
+          } prompt bg-yellow-200`}
+        >
+          {promptMessage}
+        </p>
+        {modal && <MessageModal />}
+      </Center>
+    )
+  }
   return (
     <Center>
-      <Link href="/" className="underline absolute top-2 left-2">
-        Go back
-      </Link>
-      {/* <Image
-        src={photoUrl}
-        height={DIMENSION}
-        width={DIMENSION}
-        alt="ProfPic"
-      /> */}
-      <h1>{email}</h1>
-      <h3>{displayName}</h3>
-      {id !== userId && (
-        <>
-          <button
-            onClick={async (e: MouseEvent<HTMLButtonElement>) => {
-              if (!currentUser) return push("/signin")
-              const button: HTMLButtonElement = e.currentTarget
-              await runTransaction(db, async (tsx) => {
-                button.setAttribute("disabled", "true")
-                const docRef = doc(db, `/users/${id}`)
-                const fetchDoc = await tsx.get(docRef)
-                let contactArr: string[] =
-                  fetchDoc.data()?.contacts === undefined
-                    ? []
-                    : fetchDoc.data()?.contacts
-                if (!contactArr.includes(email))
-                  tsx.update(docRef, {
-                    contacts: arrayUnion(email),
-                  })
-                else
-                  console.log(
-                    `You've aready added this user in your contact list`
-                  )
-              })
-              button.removeAttribute("disabled")
-            }}
-          >
-            Add to Contact
-          </button>
-          {/* <label>Mutual Contacts</label>
-          {contacts.map((v: string) => (
-            <p key={v}>{v}</p>
-          ))} */}
-        </>
-      )}
+      <Loading />
     </Center>
   )
 }

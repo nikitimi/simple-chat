@@ -17,14 +17,12 @@ import {
   type Auth,
   signInWithCredential,
 } from "firebase/auth"
-import type { AuthContextValue, AuthTypes } from "./types"
-import { Loading } from "./"
+import type { AuthContextTypes, AuthTypes } from "../components/types"
+import { Loading } from "../components"
 import { getDocs, query, collection, where, addDoc } from "firebase/firestore"
-import { setCurrentId } from "~/utils/redux/actions/userActions"
-import { useAppDispatch } from "~/utils/redux/hooks"
-import Center from "./Center"
+import Center from "../components/Center"
 
-const AuthContext = createContext<AuthContextValue>({
+const AuthContext = createContext<AuthContextTypes>({
   currentUser: null,
   signin: async () => {},
   signup: async () => {},
@@ -33,12 +31,9 @@ const AuthContext = createContext<AuthContextValue>({
 })
 
 export const useAuth = () => useContext(AuthContext)
-export const AuthProvider: React.FC<any> = ({
-  children,
-}: {
+export const AuthProvider: React.FC<{
   children: ReactNode
-}) => {
-  const dispatch = useAppDispatch()
+}> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<Auth["currentUser"]>(null)
   const [loading, setLoading] = useState(true)
 
@@ -67,13 +62,14 @@ export const AuthProvider: React.FC<any> = ({
       )
       if (snap.empty) {
         const { displayName, photoURL, email, emailVerified } = user
-        const newUser = await addDoc(userCol, {
+        // By default adding self into contact so you can send message to yourself
+        await addDoc(userCol, {
+          contacts: [{ displayName, photoURL, email, emailVerified }],
           displayName,
           photoURL,
           email,
           emailVerified,
         })
-        dispatch(setCurrentId(newUser.id))
       }
     } catch (err) {
       console.log(err)

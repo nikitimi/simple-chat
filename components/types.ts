@@ -14,7 +14,25 @@ export type AuthTypes = {
   email: EmailType["email"]
   password: PasswordType["password"]
 }
-export type AuthContextValue = {
+
+export type UserMessageHeader = {
+  displayName: string
+  email: string
+  emailVerified: boolean
+  photoURL: string
+}
+
+export interface UserDataTypes extends UserMessageHeader {
+  description?: string
+  lastOnline: number
+}
+
+export interface UserDataInterface extends UserDataTypes {
+  contacts: UserDataTypes[]
+  userId: string
+}
+
+export type AuthContextTypes = {
   currentUser: Auth["currentUser"]
   signin: (props: AuthTypes) => Promise<UserCredential | void>
   signup: (props: AuthTypes) => Promise<UserCredential | void>
@@ -23,6 +41,21 @@ export type AuthContextValue = {
   // upEmail: (props: EmailType) => Promise<void>
   // upPassword: (props: PasswordType) => void
   googleSignIn: () => void
+}
+
+export type ClientMessageTypes = {
+  recipient: UserMessageHeader
+  message: string
+  sentTime: number
+}
+export interface MessageInterface extends ClientMessageTypes {
+  sender: UserMessageHeader
+  type: string
+}
+
+export type ChatIDDataTypes = {
+  participants?: string[]
+  updatedAt?: number
 }
 
 export interface TextfieldTypes extends HTMLAttributes<HTMLInputElement> {

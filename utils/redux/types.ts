@@ -1,3 +1,4 @@
+export const SET_USER = "SET_USER"
 export const SET_CHAT = "SET_CHAT"
 export const SET_CONTACT_LIST = "SET_CONTACT_LIST"
 export const SET_CHAT_HEADS = "SET_CHAT_HEADS"
@@ -6,7 +7,10 @@ export const TOGGLE_MODAL = "TOGGLE_MODAL"
 export const SET_DARKMODE = "SET_DARKMODE"
 export const HANDLER_ERROR = "HANDLER_ERROR"
 
-export type ToggleModalTypes = "messageModal" | "submitContactMessage"
+export type ToggleModalTypes =
+  | "messageModal"
+  | "submitContactMessage"
+  | "chatHeader"
 
 export type setChat = {
   type: typeof SET_CHAT
@@ -18,7 +22,7 @@ export type setContactList = {
 }
 export type setChatHeads = {
   type: typeof SET_CHAT_HEADS
-  payload: string[]
+  payload: string[] | null
 }
 export type setCurrentId = {
   type: typeof SET_CURRENT_ID

@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app"
 import { getAuth } from "firebase/auth"
-import { getFirestore } from "firebase/firestore"
+import { collection, getFirestore } from "firebase/firestore"
 // import { getAnalytics } from "firebase/analytics"
 
 const firebaseApp = initializeApp({
@@ -15,4 +15,6 @@ const firebaseApp = initializeApp({
 
 export const db = getFirestore(firebaseApp)
 export const auth = getAuth(firebaseApp)
+export const chatsCollectionRef = collection(db, "chats")
+export const userCollectionRef = collection(db, "users")
 // export const analytics = getAnalytics(firebaseApp)

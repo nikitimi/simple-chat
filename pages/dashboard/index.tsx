@@ -1,10 +1,9 @@
+import React from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/router"
-import React from "react"
-import { Loading } from "~/components"
-import { useAuth } from "~/components/AuthContext"
-import Center from "~/components/Center"
+import { Center, Loading } from "~/components"
+import { useAuth } from "~/contexts"
 import { useAppSelector } from "~/utils/redux/hooks"
 
 const Dashboard = () => {

@@ -2,7 +2,6 @@ import { ThunkAction } from "redux-thunk"
 import { RootState } from "../store"
 import { DataAction } from "../types"
 import * as userAction from "../types"
-
 export function setChatModal(
   id: string
 ): ThunkAction<void, RootState, undefined, DataAction> {
@@ -40,7 +39,7 @@ export function setContactList(
   }
 }
 export function setChatHeads(
-  chatHeads: string[]
+  chatHeads: string[] | null
 ): ThunkAction<void, RootState, undefined, DataAction> {
   return async (dispatch) => {
     try {

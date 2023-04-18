@@ -2,7 +2,37 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  html {
+    @apply overflow-hidden;
+  }
+  .custom-base {
+    @apply px-2 py-1 rounded-md shadow-md;
+  }
+  .button {
+    @apply custom-base duration-300 ease-in-out;
+  }
+  .hover {
+    @apply hover:scale-110;
+  }
+  .prompt {
+    @apply custom-base fixed w-fit mx-auto inset-x-0 bottom-10 select-none transition-opacity;
+  }
+}
+
+@layer components {
+  .add-contacts-button {
+    @apply bg-green-400 text-white button hover;
+  }
+  .add-contacts-button-disabled {
+    @apply bg-slate-300 text-slate-400 button;
+  }
+}
+
 @layer utilities {
+  .custom-blur {
+    @apply bg-black/30;
+  }
   .delay-1 {
     animation-delay: 100ms;
   }

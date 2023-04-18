@@ -5,7 +5,8 @@ interface DataState {
   darkMode: boolean
   messageModal: boolean
   submitContactMessage: boolean
-  chatModal: string | null
+  chatHeader: boolean
+  chatModal: string
   error: Error | null
 }
 
@@ -13,7 +14,8 @@ const initialState: DataState = {
   darkMode: false,
   messageModal: false,
   submitContactMessage: false,
-  chatModal: null,
+  chatHeader: false,
+  chatModal: "",
   error: null,
 }
 
