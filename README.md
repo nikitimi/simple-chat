@@ -11,17 +11,17 @@ https://simple-chat-wheat.vercel.app/ogdMqUtY0JZf8dFMVfgo
 # Getting Started
 if you're cloning this site here is the steps that you should follow, if not just visit the site in the about section, you may also use the preview & production environment.
 
-# Node.js
+## Node.js
 
-## Install Node JS
+### Install Node JS
 - Install Node.js LTS [Here](https://nodejs.org/dist/v18.16.0/node-v18.16.0-x64.msi)
 
-# Git Bash
+## Git Bash
 
-## Install Git
+### Install Git
 - Install Git [Here](https://git-scm.com/downloads) choose your operating system.
 
-## Clone this repository:
+### Clone this repository:
 - In your Command Line Interface execute these command
 
 
