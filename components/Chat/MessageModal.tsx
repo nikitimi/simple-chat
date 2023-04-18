@@ -14,9 +14,8 @@ const initialRecipient = {
 }
 
 const MessageModal = () => {
-  const { currentUserData, currentUserId, promptMessage, handleAddToContacts } =
-    useUser()
-  const { handleMessage } = useMessage()
+  const { currentUserData, currentUserId, handleAddToContacts } = useUser()
+  const { sendMessage, selectChatHead, chatHeads } = useMessage()
   const dispatch = useAppDispatch()
   const { messageModal, submitContactMessage } = useAppSelector((s) => s.ui)
   const divRef = useRef<HTMLDivElement>(null)
@@ -69,12 +68,6 @@ const MessageModal = () => {
     setRecipient((p) => ({ ...p, displayName: e.target.value }))
   }
 
-  function handleSend(data: ClientMessageTypes) {
-    if (data.message !== "") {
-      handleMessage(data)
-    }
-  }
-
   return messageModal ? (
     <div
       className="absolute z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-100
@@ -88,14 +81,13 @@ const MessageModal = () => {
         onSubmit={async (e) => {
           e.preventDefault()
           const message = e.currentTarget.querySelector("textarea")
-
-          handleSend({
+          sendMessage({
             recipient,
             sentTime: new Date().getTime(),
             message: message ? message.value : "",
           })
-
           setRecipient(initialRecipient)
+          selectChatHead(chatHeads[0])
           dispatch(toggleModal("messageModal"))
         }}
       >

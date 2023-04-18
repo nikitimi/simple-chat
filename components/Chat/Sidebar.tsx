@@ -10,37 +10,46 @@ const SideBar = ({ blur }: { blur: boolean }) => {
   const { messageModal, chatHeader } = useAppSelector((s) => s.ui)
   const { chats, chatHead, chatHeads, selectChatHead } = useMessage()
   const [chatHeadState, setChatHeadState] = useState<MessageInterface[]>([])
+  // Styles
+  const baseStyle = "p-3 shadow-sm flex"
+  const activeStyle = `bg-blue-300 ${baseStyle}`
+  const inactiveStyle = `even:bg-slate-100 bg-slate-50 ${baseStyle}`
+  const buttons = document.querySelectorAll("#chat-head")
+
+  function removeButtonStyles(selectedTarget: HTMLElement | Element) {
+    buttons.forEach((button) => {
+      button.removeAttribute("class")
+      button.setAttribute("class", inactiveStyle)
+    })
+    if (selectedTarget) {
+      // console.log(selectedTarget)
+      selectedTarget.removeAttribute("class")
+      selectedTarget.setAttribute("class", activeStyle)
+    }
+  }
 
   const handleClick =
     (chatHead: string) => (e: React.MouseEvent<HTMLButtonElement>) => {
       e.preventDefault()
-      const baseStyle = "p-3 shadow-sm flex"
-      const activeStyle = `bg-blue-300 ${baseStyle}`
-      const inactiveStyle = `even:bg-slate-100 bg-slate-50 ${baseStyle}`
-      const currentButton = e.currentTarget
-      const buttons = currentButton.parentElement?.querySelectorAll("button")
-      buttons?.forEach((button) => {
-        button.removeAttribute("class")
-        button.setAttribute("class", inactiveStyle)
-      })
-      currentButton.removeAttribute("class")
-      currentButton.setAttribute("class", activeStyle)
+      const button: HTMLButtonElement = e.currentTarget
       selectChatHead(chatHead)
+      setTimeout(() => removeButtonStyles(button))
     }
 
   useEffect(() => {
     let isMounted = true
     if (isMounted) {
-      console.log(chats)
       chatHeads.forEach((v) => {
         const chatData = chats[v]
         if (chatData) setChatHeadState((p) => [...p, chatData[0]])
       })
+      removeButtonStyles(buttons[0])
     }
     return () => {
-      // console.log("Unmounting Active CHats")
+      console.log("Unmounting sidebar")
       isMounted = false
     }
+    //eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chats, chatHead, chatHeads])
 
   return (
@@ -61,14 +70,19 @@ const SideBar = ({ blur }: { blur: boolean }) => {
       <div className="grid grid-rows-7">
         {chatHeads.map((value, i) => {
           const DIMENSION = 80
-          const recipient = chatHeadState[i]?.recipient
-          const message = recipient ? chatHeadState[i].message : "foobar"
+
+          const recipient = chats[value]?.[0].recipient
+          const message = recipient ? chats[value][0].message : "foobar"
           try {
             return (
               <button
+                id="chat-head"
                 key={i}
                 onClick={handleClick(chatHeads[i])}
-                className="p-3 shadow-sm flex"
+                onLoad={(e) =>
+                  e.currentTarget.setAttribute("class", inactiveStyle)
+                }
+                disabled={!recipient && true}
               >
                 <div className="relative min-w-fit rounded-full overflow-hidden">
                   <Image
@@ -84,7 +98,7 @@ const SideBar = ({ blur }: { blur: boolean }) => {
                     alt=""
                   />
                 </div>
-                <div>
+                <div className="flex flex-col grow items-start justify-center">
                   <h3
                     className={`${
                       chatHeadState.length > 0

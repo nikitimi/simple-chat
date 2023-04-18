@@ -13,7 +13,7 @@ import React from "react"
 const ChatModal = ({ blur }: { blur: boolean }) => {
   const DIMENSION = 80
   const { currentUser } = useAuth()
-  const { chatHead, chats, handleMessage } = useMessage()
+  const { chatHead, chats, sendMessage } = useMessage()
   const dispatch = useAppDispatch()
   const { messageModal, chatHeader } = useAppSelector((s) => s.ui)
   const [message, setMessage] = useState("")
@@ -29,7 +29,7 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
     }
 
     if (recipient) {
-      handleMessage({
+      sendMessage({
         recipient: recipient,
         ...rest,
       })
@@ -55,7 +55,7 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
         blur ? "custom-blur" : ""
       } w-full min-h-1/2 max-h-screen bg-slate-50 duration-300 ease`}
     >
-      {userActiveChats && (
+      {chats[`${chatHead}`] && userActiveChats && (
         <div className="relative h-fit text-center py-2 px-1">
           <button
             className="bg-slate-200 w-full"
@@ -66,70 +66,76 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
               <Image
                 width={DIMENSION}
                 height={DIMENSION}
-                src={userActiveChats[0].recipient.photoURL}
+                src={userActiveChats[0]?.recipient.photoURL}
                 alt="ava-photo"
               />
             </div>
-            <h1>{userActiveChats[0].recipient.displayName}</h1>
+            <h1>{userActiveChats[0]?.recipient.displayName}</h1>
           </button>
         </div>
       )}
-      <div className="flex flex-col-reverse h-min overflow-y-scroll">
-        {userActiveChats &&
-          userActiveChats.map(({ message, sentTime, sender }, i) => {
-            const sentT = new Date()
-            sentT.setTime(sentTime)
-            const time = `${sentT.getHours()}:${sentT.getMinutes()}`
-            return (
-              <div
-                key={i}
-                className={`${
-                  sender.email === currentUser?.email
-                    ? "bg-blue-400 text-white ml-auto"
-                    : "bg-slate-200 text-black mr-auto"
-                } w-min rounded-md px-4 py-2 m-2 `}
-              >
-                <p>{message}</p>
-                <p>{time}</p>
-              </div>
-            )
-          })}
-      </div>
+      {chats[`${chatHead}`] && (
+        <div className="flex flex-col-reverse h-min overflow-y-scroll">
+          {userActiveChats &&
+            userActiveChats.map(({ message, sentTime, sender }, i) => {
+              const sentT = new Date()
+              sentT.setTime(sentTime)
+              const time = `${sentT.getHours()}:${sentT.getMinutes()}`
+              return (
+                <div
+                  key={i}
+                  className={`${
+                    sender.email === currentUser?.email
+                      ? "bg-blue-400 text-white ml-auto"
+                      : "bg-slate-200 text-black mr-auto"
+                  } w-min rounded-md px-4 py-2 m-2 `}
+                >
+                  <p>{message}</p>
+                  <p>{time}</p>
+                </div>
+              )
+            })}
+        </div>
+      )}
       {userActiveChats && (
         <div className="fixed bottom-2 w-2/3 right-4">
-          <form>
-            <textarea
-              onKeyDown={(e) => {
-                switch (e.code) {
-                  case "NumpadEnter":
-                  case "Enter":
-                    return handleSendMessageEvents
-                  default:
-                    return
-                }
-              }}
-              required
-              name="content"
-              value={message}
-              onChange={(e) => {
-                const text: HTMLTextAreaElement = e.currentTarget
-                setMessage(text.value)
-              }}
-              className="w-full resize-none p-4 rounded-md focus:opacity-100 outline-none border duration-300 ease focus:border-blue-500 hover:opacity-100 opacity-10"
-              placeholder="Enter a message..."
-            />
-          </form>
-          <button
-            disabled={message === ""}
-            className={`${
-              message === ""
-                ? "bg-slate-300 text-slate-400"
-                : "bg-green-400 text-white"
-            } rounded-md fixed z-10 right-6 bottom-10 px-2 py-1 `}
-            onClick={() => handleSendMessageEvents}
-          >
-            Send
-          </button>
+          {chats[`${chatHead}`] && (
+            <form>
+              <textarea
+                onKeyDown={(e) => {
+                  switch (e.code) {
+                    case "NumpadEnter":
+                    case "Enter":
+                      return handleSendMessageEvents()
+                    default:
+                      return
+                  }
+                }}
+                required
+                name="content"
+                value={message}
+                onChange={(e) => {
+                  const text: HTMLTextAreaElement = e.currentTarget
+                  setMessage(text.value)
+                }}
+                className="w-full resize-none p-4 rounded-md focus:opacity-100 outline-none border duration-300 ease focus:border-blue-500 hover:opacity-100 opacity-10"
+                placeholder="Enter a message..."
+              />
+            </form>
+          )}
+          {chats[`${chatHead}`] && (
+            <button
+              disabled={message === ""}
+              className={`${
+                message === ""
+                  ? "bg-slate-300 text-slate-400"
+                  : "bg-green-400 text-white"
+              } rounded-md fixed z-10 right-6 bottom-10 px-2 py-1 `}
+              onClick={() => handleSendMessageEvents()}
+            >
+              Send
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -139,7 +145,7 @@ const ChatModal = ({ blur }: { blur: boolean }) => {
 const ChatHeader = () => {
   const { chatHeader } = useAppSelector((s) => s.ui)
   const dispatch = useAppDispatch()
-  const { chatHead } = useMessage()
+  const { chatHead, selectChatHead } = useMessage()
   return chatHeader ? (
     <div
       className="absolute z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-100
@@ -152,6 +158,7 @@ const ChatHeader = () => {
         onClick={async () => {
           const batch = writeBatch(db)
           const chatIdRef = doc(chatsCollectionRef, `${chatHead}`)
+
           const historyColRef = collection(chatIdRef, `history`)
           const snap = await getDocs(historyColRef)
           snap.forEach((document) =>
@@ -159,6 +166,7 @@ const ChatHeader = () => {
           )
           batch.delete(chatIdRef)
           batch.commit()
+          dispatch(toggleModal("chatHeader"))
         }}
       />
     </div>

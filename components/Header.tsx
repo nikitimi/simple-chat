@@ -7,12 +7,12 @@ const Header = ({ blur }: { blur: boolean }) => {
   const { currentUser } = useAuth()
   const paths = currentUser
     ? [
-        { value: "", name: "chats" },
+        { value: "#", name: "chats" },
         { value: "dashboard", name: "dashboard" },
       ]
     : [
-        { value: "", name: "chats" },
-        { value: "signin", name: "signin" },
+        { value: "#", name: "" },
+        // { value: "signin", name: "signin" },
       ]
   return (
     <header

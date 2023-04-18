@@ -2,12 +2,7 @@ import { doc, onSnapshot } from "firebase/firestore"
 import Link from "next/link"
 import { useEffect } from "react"
 import { Center, Header, Main } from "~/components"
-import {
-  ChatHeader,
-  ChatModal,
-  MessageModal,
-  Sidebar,
-} from "~/components/Default"
+import { ChatHeader, ChatModal, MessageModal, Sidebar } from "~/components/Chat"
 import { useAuth, useMessage } from "~/contexts"
 import { db } from "~/utils/firebase"
 import { setContactList } from "~/utils/redux/actions/userActions"

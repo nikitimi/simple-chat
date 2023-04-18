@@ -3,7 +3,7 @@ import Link from "next/link"
 import { useRouter } from "next/router"
 import React, { useEffect, useState } from "react"
 import { Loading, Center } from "~/components"
-import MessageModal from "~/components/Default/MessageModal"
+import MessageModal from "~/components/Chat/MessageModal"
 import { useUser } from "~/contexts"
 
 const UserID = () => {
