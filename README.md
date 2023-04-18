@@ -5,8 +5,8 @@ Add Me:
 ```
 https://simple-chat-wheat.vercel.app/ogdMqUtY0JZf8dFMVfgo
 ```
-You can share yours by clicking the share button in `Dashboard > Share`
-Contact list will only appear in the compose button in `chats` route below create new message.
+- You can share yours by clicking the share button in `Dashboard > Share`
+- Contact list will only appear in the compose button in `chats` route below create new message.
 
 # Getting Started
 
