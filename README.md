@@ -55,8 +55,10 @@ git clone git@github.com:Resyntech/simple-chat.git
   - ![Create Compo History Fields Colgroup](https://user-images.githubusercontent.com/75870962/232265449-9ea5691c-9e03-4834-b898-4917c0545908.png)
 
   - ![chats](https://user-images.githubusercontent.com/75870962/232265486-cd8a3968-3416-4c9c-ab44-e6c3a31767b2.png)
-  - ![chats participants](https://user-images.githubusercontent.com/75870962/232265488-72e64150-9c52-42b7-b033-b0c8d9e2740b.png)
+  - ![image](https://user-images.githubusercontent.com/75870962/232981743-0a818449-fe89-483b-81f7-b830ad257a34.png)
   - ![chats participants col](https://user-images.githubusercontent.com/75870962/232265490-9f998f66-56c2-4635-a12d-e096335ec23b.png)
+
+You can also refer to the prompt of Firebase in the console log for faster set-up of query handling
 
 # Changelogs [SOLVED]:
 ### 2023-04-18 [reference](./README.md#2023-04-16)
